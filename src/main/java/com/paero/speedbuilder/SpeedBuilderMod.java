@@ -25,7 +25,7 @@ public class SpeedBuilderMod {
         buildLoader.registerScheduler();
         SpeedBuilderConfig.loadConfig();
         buildLoader.registerAccuracyPoller();
-        LOGGER.info("Paero's SpeedBuilder initialized successfully!");
+        LOGGER.info("PaeroBuilder initialized successfully!");
     }
 
     private static void onRegisterCommands(RegisterCommandsEvent event) {
@@ -45,13 +45,13 @@ public class SpeedBuilderMod {
             if (seconds >= 0 && seconds <= 60) {
                 SpeedBuilderConfig.setPreviewTime(player.getUUID(), seconds);
                 SpeedBuilderConfig.setPendingCustomInput(player.getUUID(), false);
-                player.displayClientMessage(Component.literal("\u00a7aPreview time set to " + seconds + " seconds!"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7aPreview time set to " + seconds + " seconds!"), false);
                 commands.showConfig(player.createCommandSourceStack(), player);
             } else {
-                player.displayClientMessage(Component.literal("\u00a7cInvalid time! Enter a number between 0 and 60."), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7cInvalid time! Enter a number between 0 and 60."), false);
             }
         } catch (NumberFormatException e) {
-            player.displayClientMessage(Component.literal("\u00a7cInvalid number! Enter a number between 0 and 60."), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a7cInvalid number! Enter a number between 0 and 60."), false);
         }
     }
 }

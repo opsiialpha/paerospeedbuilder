@@ -16,7 +16,7 @@ public class resetBuild {
                 }
             }
         }
-        source.sendSuccess(() -> Component.literal("\u00a7aArea cleared"), false);
+        source.sendSuccess(() -> Theme.lit(source, "\u00a7aArea cleared"), false);
         return 1;
     }
 }

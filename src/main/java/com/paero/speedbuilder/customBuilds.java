@@ -56,15 +56,15 @@ public class customBuilds {
             player = source.getPlayer();
         }
         catch (Exception e) {
-            source.sendFailure(Component.literal("You must be a player to create custom builds!"));
+            source.sendFailure(Theme.lit(source, "You must be a player to create custom builds!"));
             return 0;
         }
         if (buildName.isEmpty() || !buildName.matches("[a-zA-Z0-9_-]+")) {
-            player.displayClientMessage(Component.literal("\u00a7cBuild name must contain only letters, numbers, underscores, and hyphens!"), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a7cBuild name must contain only letters, numbers, underscores, and hyphens!"), false);
             return 0;
         }
         if (customBuilds.isCustomBuild(buildName) || commands.isValidBuildName(buildName)) {
-            player.displayClientMessage(Component.literal(("\u00a7cBuild '" + buildName + "' already exists!")), false);
+            player.displayClientMessage(Theme.lit(player, ("\u00a7cBuild '" + buildName + "' already exists!")), false);
             return 0;
         }
         try {
@@ -85,8 +85,8 @@ public class customBuilds {
                 }
             }
             if (!hasNonAirBlocks) {
-                player.displayClientMessage(Component.literal("\u00a7cThe build area is empty! Build something in the area first."), false);
-                player.displayClientMessage(Component.literal("\u00a77Build area: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7cThe build area is empty! Build something in the area first."), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Build area: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
                 return 0;
             }
             CuboidRegion region = new CuboidRegion(BlockVector3.at(BUILD_AREA_MIN.x(), minY, BUILD_AREA_MIN.z()), BlockVector3.at(BUILD_AREA_MAX.x(), maxY, BUILD_AREA_MAX.z()));
@@ -113,22 +113,22 @@ public class customBuilds {
             File schematicFile = new File(customBuildsDir, buildName + ".schem");
             ClipboardFormat format = ClipboardFormats.findByAlias("schem");
             if (format == null) {
-                player.displayClientMessage(Component.literal("\u00a7cSchematic format 'schem' is not supported!"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7cSchematic format 'schem' is not supported!"), false);
                 return 0;
             }
             try (FileOutputStream fos = new FileOutputStream(schematicFile);
                  ClipboardWriter writer = format.getWriter(fos)) {
                 writer.write(clipboard);
                 customBuildNames.add(buildName);
-                player.displayClientMessage(Component.literal("\u00a7aCustom build '" + buildName + "' created successfully!"), false);
-                player.displayClientMessage(Component.literal("\u00a77Blocks: " + blockCount + " | Height: Y" + minY + " to Y" + maxY + " (" + (maxY - minY + 1) + " layers)"), false);
-                player.displayClientMessage(Component.literal("\u00a77Size: " + (BUILD_AREA_MAX.x() - BUILD_AREA_MIN.x() + 1) + "x" + (maxY - minY + 1) + "x" + (BUILD_AREA_MAX.z() - BUILD_AREA_MIN.z() + 1)), false);
-                player.displayClientMessage(Component.literal("\u00a77Use \u00a7e/sb " + buildName + " \u00a77to practice this build!"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7aCustom build '" + buildName + "' created successfully!"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Blocks: " + blockCount + " | Height: Y" + minY + " to Y" + maxY + " (" + (maxY - minY + 1) + " layers)"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Size: " + (BUILD_AREA_MAX.x() - BUILD_AREA_MIN.x() + 1) + "x" + (maxY - minY + 1) + "x" + (BUILD_AREA_MAX.z() - BUILD_AREA_MIN.z() + 1)), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Use \u00a7e/pb " + buildName + " \u00a77to practice this build!"), false);
                 return 1;
             }
         }
         catch (Exception e) {
-            player.displayClientMessage(Component.literal(("\u00a7cFailed to create custom build: " + e.getMessage())), false);
+            player.displayClientMessage(Theme.lit(player, ("\u00a7cFailed to create custom build: " + e.getMessage())), false);
             e.printStackTrace();
             return 0;
         }
@@ -161,25 +161,25 @@ public class customBuilds {
             player = source.getPlayer();
         }
         catch (Exception e) {
-            source.sendFailure(Component.literal("You must be a player to delete custom builds!"));
+            source.sendFailure(Theme.lit(source, "You must be a player to delete custom builds!"));
             return 0;
         }
         if (!customBuilds.isCustomBuild(buildName)) {
-            player.displayClientMessage(Component.literal(("\u00a7cCustom build '" + buildName + "' does not exist!")), false);
+            player.displayClientMessage(Theme.lit(player, ("\u00a7cCustom build '" + buildName + "' does not exist!")), false);
             return 0;
         }
         try {
             File schematicFile = new File(CUSTOM_BUILDS_FOLDER + buildName + ".schem");
             if (schematicFile.exists() && schematicFile.delete()) {
                 customBuildNames.remove(buildName);
-                player.displayClientMessage(Component.literal(("\u00a7aCustom build '" + buildName + "' deleted successfully!")), false);
+                player.displayClientMessage(Theme.lit(player, ("\u00a7aCustom build '" + buildName + "' deleted successfully!")), false);
                 return 1;
             }
-            player.displayClientMessage(Component.literal("\u00a7cFailed to delete custom build file!"), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a7cFailed to delete custom build file!"), false);
             return 0;
         }
         catch (Exception e) {
-            player.displayClientMessage(Component.literal(("\u00a7cFailed to delete custom build: " + e.getMessage())), false);
+            player.displayClientMessage(Theme.lit(player, ("\u00a7cFailed to delete custom build: " + e.getMessage())), false);
             return 0;
         }
     }
@@ -190,17 +190,17 @@ public class customBuilds {
             player = source.getPlayer();
         }
         catch (Exception e) {
-            source.sendFailure(Component.literal("You must be a player to list custom builds!"));
+            source.sendFailure(Theme.lit(source, "You must be a player to list custom builds!"));
             return 0;
         }
         if (customBuildNames.isEmpty()) {
-            player.displayClientMessage(Component.literal("\u00a7eNo custom builds found."), false);
-            player.displayClientMessage(Component.literal("\u00a77Build something in the area \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3) \u00a77then use \u00a7a/sb create <name>"), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a7eNo custom builds found."), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a77Build something in the area \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3) \u00a77then use \u00a7a/pb create <name>"), false);
             return 0;
         }
-        player.displayClientMessage(Component.literal(("\u00a76Custom Builds (" + customBuildNames.size() + "):")), false);
+        player.displayClientMessage(Theme.lit(player, ("\u00a76Custom Builds (" + customBuildNames.size() + "):")), false);
         for (String buildName : customBuildNames) {
-            player.displayClientMessage(Component.literal(("\u00a77- \u00a7e" + buildName)), false);
+            player.displayClientMessage(Theme.lit(player, ("\u00a77- \u00a7e" + buildName)), false);
         }
         return 1;
     }
@@ -211,13 +211,13 @@ public class customBuilds {
             player = source.getPlayer();
         }
         catch (Exception e) {
-            source.sendFailure(Component.literal("You must be a player to use this command!"));
+            source.sendFailure(Theme.lit(source, "You must be a player to use this command!"));
             return 0;
         }
-        player.displayClientMessage(Component.literal("\u00a7eBuild Area Information:"), false);
-        player.displayClientMessage(Component.literal("\u00a77From: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
-        player.displayClientMessage(Component.literal("\u00a77Size: \u00a7e7x16x7 \u00a77blocks"), false);
-        player.displayClientMessage(Component.literal("\u00a77Build your structure in this area, then use \u00a7a/sb create <name> \u00a77to save it!"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a7eBuild Area Information:"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a77From: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a77Size: \u00a7e7x16x7 \u00a77blocks"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a77Build your structure in this area, then use \u00a7a/pb create <name> \u00a77to save it!"), false);
         return 1;
     }
 

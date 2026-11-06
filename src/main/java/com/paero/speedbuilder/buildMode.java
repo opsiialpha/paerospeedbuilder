@@ -33,7 +33,6 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 
 public class buildMode {
     private static final Set<UUID> BUILD_MODE_PLAYERS = new HashSet<>();
-    private static final Map<UUID, GameType> PREVIOUS_GAME_MODE = new HashMap<>();
 
     private static boolean isInsideBuildArea(BlockPos pos) {
         int x = pos.getX();
@@ -70,42 +69,27 @@ public class buildMode {
         return BUILD_MODE_PLAYERS.contains(player.getUUID());
     }
 
+    /** Turns build mode on. The player's game mode and abilities are left exactly as they are. */
     public static void enable(ServerPlayer player) {
         if (BUILD_MODE_PLAYERS.contains(player.getUUID())) {
             return;
         }
         BUILD_MODE_PLAYERS.add(player.getUUID());
-        PREVIOUS_GAME_MODE.put(player.getUUID(), player.gameMode.getGameModeForPlayer());
-        boolean wasFlying = player.getAbilities().flying;
-        if (player.gameMode.getGameModeForPlayer() != GameType.CREATIVE) {
-            player.setGameMode(GameType.CREATIVE);
-        }
-        player.getAbilities().mayfly = true;
-        player.getAbilities().invulnerable = true;
-        player.getAbilities().flying = wasFlying;
-        player.onUpdateAbilities();
-        player.displayClientMessage(Component.literal("\u00a7aBuild Mode enabled"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a7aBuild Mode enabled"), false);
     }
 
-    /** Leaves build mode and puts the player back in the game mode they had before entering it. */
+    /** Leaves build mode. The game mode is never changed. */
     public static void disable(ServerPlayer player) {
         boolean wasInBuildMode = BUILD_MODE_PLAYERS.remove(player.getUUID());
-        GameType previous = PREVIOUS_GAME_MODE.remove(player.getUUID());
         if (!wasInBuildMode) {
             return;
         }
-        GameType targetMode = previous != null ? previous : GameType.SURVIVAL;
-        if (player.gameMode.getGameModeForPlayer() != targetMode) {
-            // setGameMode also resets flying / invulnerable abilities for the new mode
-            player.setGameMode(targetMode);
-        }
-        player.onUpdateAbilities();
-        player.displayClientMessage(Component.literal("\u00a7cBuild Mode disabled!"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a7cBuild Mode disabled!"), false);
     }
 
     public static void registerEvents() {
         NeoForge.EVENT_BUS.addListener(buildMode::onBlockBreak);
-        // Fabric's "AFTER" break event: run last, and only if nobody cancelled the break.
+        // Runs last, and only if nobody cancelled the break.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, buildMode::onBlockBroken);
         NeoForge.EVENT_BUS.addListener(buildMode::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(buildMode::onBreakSpeed);
@@ -149,14 +133,31 @@ public class buildMode {
             return;
         }
         if (pos.getY() <= -1) {
-            serverPlayer.displayClientMessage(Component.literal("\u00a7cCan't break blocks at or below Y = -1!"), false);
+            serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cCan't break blocks at or below Y = -1!"), false);
             event.setCanceled(true);
             return;
         }
-        if (buildLoader.isPreviewing(serverPlayer) || SpeedBuilderConfig.isPaero(serverPlayer.getUUID())) {
+        boolean refund = !(buildLoader.isPreviewing(serverPlayer) || SpeedBuilderConfig.isPaero(serverPlayer.getUUID()));
+        boolean creative = serverPlayer.isCreative();
+        int amount = 1;
+        if (!creative) {
+            // Survival / Adventure: break the block ourselves without vanilla drops, so the block is only
+            // given back once (and not at all while previewing or on Paero difficulty).
+            if (blockKey(state.getBlock()).endsWith("_slab")) {
+                try {
+                    if ("double".equals(state.getValue(BlockStateProperties.SLAB_TYPE).toString())) {
+                        amount = 2;
+                    }
+                } catch (Exception ignored) {
+                }
+            }
+            event.setCanceled(true);
+            serverPlayer.serverLevel().destroyBlock(pos, false, serverPlayer);
+        }
+        if (!refund) {
             return;
         }
-        ItemStack toGive = new ItemStack(state.getBlock().asItem(), 1);
+        ItemStack toGive = new ItemStack(state.getBlock().asItem(), amount);
         MinecraftServer server = serverPlayer.getServer();
         if (server != null && !toGive.isEmpty() && toGive.getItem() != Items.AIR) {
             server.execute(() -> {
@@ -227,7 +228,7 @@ public class buildMode {
                 BlockPos targetPos = hitResult.getBlockPos().relative(hitResult.getDirection());
                 BlockState targetState = world.getBlockState(targetPos);
                 if (!isInsideBuildArea(targetPos)) {
-                    serverPlayer.displayClientMessage(Component.literal("\u00a7cYou cannot place blocks outside the build area!"), false);
+                    serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
                     deny(event);
                     return;
                 }
@@ -236,16 +237,19 @@ public class buildMode {
                     return;
                 }
             }
-            boolean wasFlying = serverPlayer.getAbilities().flying;
-            boolean wasInvulnerable = serverPlayer.getAbilities().invulnerable;
-            serverPlayer.setGameMode(GameType.SURVIVAL);
-            server.execute(() -> server.execute(() -> {
-                serverPlayer.setGameMode(GameType.CREATIVE);
-                serverPlayer.getAbilities().flying = wasFlying;
-                serverPlayer.getAbilities().mayfly = true;
-                serverPlayer.getAbilities().invulnerable = wasInvulnerable;
-                serverPlayer.onUpdateAbilities();
-            }));
+            if (serverPlayer.isCreative()) {
+                // Creative players need Survival rules for a tick so buckets actually place/pick up fluids.
+                boolean wasFlying = serverPlayer.getAbilities().flying;
+                boolean wasInvulnerable = serverPlayer.getAbilities().invulnerable;
+                serverPlayer.setGameMode(GameType.SURVIVAL);
+                server.execute(() -> server.execute(() -> {
+                    serverPlayer.setGameMode(GameType.CREATIVE);
+                    serverPlayer.getAbilities().flying = wasFlying;
+                    serverPlayer.getAbilities().mayfly = true;
+                    serverPlayer.getAbilities().invulnerable = wasInvulnerable;
+                    serverPlayer.onUpdateAbilities();
+                }));
+            }
             return;
         }
 
@@ -254,7 +258,7 @@ public class buildMode {
             return;
         }
         if (itemInHand.isEmpty() || itemInHand.getCount() <= 0) {
-            serverPlayer.displayClientMessage(Component.literal("\u00a7cYou're out of " + itemInHand.getItem().getDescription().getString() + "!"), true);
+            serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou're out of " + itemInHand.getItem().getDescription().getString() + "!"), true);
             deny(event);
             return;
         }
@@ -265,7 +269,7 @@ public class buildMode {
         final BlockPos targetPos = hitResult.getBlockPos().relative(hitResult.getDirection());
         final BlockState stateBefore = world.getBlockState(targetPos);
         if (!isInsideBuildArea(targetPos)) {
-            serverPlayer.displayClientMessage(Component.literal("\u00a7cYou cannot place blocks outside the build area!"), false);
+            serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
             deny(event);
             return;
         }
@@ -292,7 +296,7 @@ public class buildMode {
                 actualStateBefore = stateBefore;
             }
             if (!isInsideBuildArea(actualPlacementPos)) {
-                serverPlayer.displayClientMessage(Component.literal("\u00a7cYou cannot place blocks outside the build area!"), false);
+                serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
                 deny(event);
                 return;
             }
@@ -300,6 +304,7 @@ public class buildMode {
                 return;
             }
             if (paero) {
+                restoreStack(server, serverPlayer, hand, blockItem, countBefore);
                 return;
             }
             server.execute(() -> {
@@ -314,6 +319,7 @@ public class buildMode {
                 return;
             }
             if (paero) {
+                restoreStack(server, serverPlayer, hand, blockItem, countBefore);
                 return;
             }
             server.execute(() -> {
@@ -331,6 +337,21 @@ public class buildMode {
                 }
             });
         }
+    }
+
+    /** Paero difficulty: the inventory is never touched, so whatever vanilla took for a placement is put back. */
+    private static void restoreStack(MinecraftServer server, ServerPlayer player, InteractionHand hand, BlockItem blockItem, int countBefore) {
+        if (player.isCreative()) {
+            return;
+        }
+        server.execute(() -> server.execute(() -> {
+            ItemStack current = player.getItemInHand(hand);
+            if (current.isEmpty()) {
+                player.setItemInHand(hand, new ItemStack(blockItem, countBefore));
+            } else if (current.getItem() == blockItem && current.getCount() < countBefore) {
+                current.setCount(countBefore);
+            }
+        }));
     }
 
     private static void checkSlabPlacementAfterDelay(ServerPlayer serverPlayer, InteractionHand hand, BlockItem blockItem, BlockPos actualPlacementPos, BlockState actualStateBefore, boolean willCreateDoubleSlab, int countBefore) {

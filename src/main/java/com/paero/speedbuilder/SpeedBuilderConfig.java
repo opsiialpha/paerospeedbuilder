@@ -40,7 +40,7 @@ public class SpeedBuilderConfig {
                 }
             }
         } catch (Exception e) {
-            SpeedBuilderMod.LOGGER.error("Failed to load SpeedBuilder config", e);
+            SpeedBuilderMod.LOGGER.error("Failed to load PaeroBuilder config", e);
         }
     }
 
@@ -52,7 +52,7 @@ public class SpeedBuilderConfig {
             }
         }
         catch (Exception e) {
-            SpeedBuilderMod.LOGGER.error("Failed to save SpeedBuilder config", e);
+            SpeedBuilderMod.LOGGER.error("Failed to save PaeroBuilder config", e);
         }
     }
 
@@ -151,6 +151,20 @@ public class SpeedBuilderConfig {
         SpeedBuilderConfig.saveConfig();
     }
 
+    /** UI theme: "default", "dark" or "paero" (see Theme). */
+    public static String getTheme(UUID uuid) {
+        String t = SpeedBuilderConfig.getPlayerSettings(uuid).uiTheme;
+        if (Theme.DARK.equalsIgnoreCase(t)) return Theme.DARK;
+        if (Theme.PAERO.equalsIgnoreCase(t)) return Theme.PAERO;
+        return Theme.DEFAULT;
+    }
+
+    public static void setTheme(UUID uuid, String theme) {
+        String t = Theme.DARK.equalsIgnoreCase(theme) ? Theme.DARK : (Theme.PAERO.equalsIgnoreCase(theme) ? Theme.PAERO : Theme.DEFAULT);
+        SpeedBuilderConfig.getPlayerSettings(uuid).uiTheme = t;
+        SpeedBuilderConfig.saveConfig();
+    }
+
     public static boolean isPaero(UUID uuid) {
         return DIFFICULTY_PAERO.equals(getDifficulty(uuid));
     }
@@ -236,6 +250,7 @@ public class SpeedBuilderConfig {
         public int previewTime = 5;
         public int finishTitleTime = 5;
         public String difficulty = "default";
+        public String uiTheme = "default";
     }
 
     public static class ConfigData {

@@ -65,7 +65,7 @@ public class spbAccuracy {
             player = source.getPlayer();
         }
         catch (Exception e) {
-            source.sendFailure(Component.literal("You must be a player to check accuracy!"));
+            source.sendFailure(Theme.lit(source, "You must be a player to check accuracy!"));
             return 0;
         }
         int total = 0;
@@ -87,7 +87,7 @@ public class spbAccuracy {
             }
         }
         double accuracy = total == 0 ? 0.0 : 100.0 * (double)correct / (double)total;
-        player.displayClientMessage(Component.literal(("\u00a7eBuild Accuracy: \u00a7a" + String.format("%.1f", accuracy) + "% \u00a77(" + correct + "/" + total + ")")), false);
+        player.displayClientMessage(Theme.lit(player, ("\u00a7eBuild Accuracy: \u00a7a" + String.format("%.1f", accuracy) + "% \u00a77(" + correct + "/" + total + ")")), false);
         return correct == total ? 1 : 0;
     }
 
@@ -422,17 +422,17 @@ public class spbAccuracy {
                 }
                 if (session.isGrindSession) {
                     int sessionCount = grindMode.incrementSessionCount(uuid);
-                    player.displayClientMessage(Component.literal(("\u00a7aBuild complete! \u00a7eAccuracy: \u00a7a100.0% (" + correct + "/" + total + ") \u00a7bTime: \u00a7f" + (seconds > 0 ? seconds + "." + String.format("%03d", millisRemainder).substring(0, 2) + "s" : elapsedMs + "ms") + " \u00a7a\u2714" + (String)(isNewBest ? " \u00a76(Personal Best!)" : (prevBest != null ? " \u00a77(Best: " + spbAccuracy.formatTime(prevBest) + ")" : "")) + " \u00a7d| Times completed: " + sessionCount)), false);
+                    player.displayClientMessage(Theme.lit(player, ("\u00a7aBuild complete! \u00a7eAccuracy: \u00a7a100.0% (" + correct + "/" + total + ") \u00a7bTime: \u00a7f" + (seconds > 0 ? seconds + "." + String.format("%03d", millisRemainder).substring(0, 2) + "s" : elapsedMs + "ms") + " \u00a7a\u2714" + (String)(isNewBest ? " \u00a76(Personal Best!)" : (prevBest != null ? " \u00a77(Best: " + spbAccuracy.formatTime(prevBest) + ")" : "")) + " \u00a7d| Times completed: " + sessionCount)), false);
                 } else {
-                    player.displayClientMessage(Component.literal(("\u00a7aBuild complete! \u00a7eAccuracy: \u00a7a100.0% (" + correct + "/" + total + ") \u00a7bTime: \u00a7f" + (seconds > 0 ? seconds + "." + String.format("%03d", millisRemainder).substring(0, 2) + "s" : elapsedMs + "ms") + " \u00a7a\u2714" + (String)(isNewBest ? " \u00a76(Personal Best!)" : (prevBest != null ? " \u00a77(Best: " + spbAccuracy.formatTime(prevBest) + ")" : "")))), false);
+                    player.displayClientMessage(Theme.lit(player, ("\u00a7aBuild complete! \u00a7eAccuracy: \u00a7a100.0% (" + correct + "/" + total + ") \u00a7bTime: \u00a7f" + (seconds > 0 ? seconds + "." + String.format("%03d", millisRemainder).substring(0, 2) + "s" : elapsedMs + "ms") + " \u00a7a\u2714" + (String)(isNewBest ? " \u00a76(Personal Best!)" : (prevBest != null ? " \u00a77(Best: " + spbAccuracy.formatTime(prevBest) + ")" : "")))), false);
                 }
                 FinishDisplay.show(player, elapsedMs);
                 Sfx.buildFinish(player);
                 if (!session.isGrindSession && buildMode.isInBuildMode(player)) {
-                    // Build finished -> leave build mode (grind mode stays in it until /sb grind stop)
+                    // Build finished -> leave build mode (grind mode stays in it until /pb grind stop)
                     buildMode.disable(player);
                 }
-                player.displayClientMessage(Component.literal("\u00a7eArea will reset in 3 seconds..."), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7eArea will reset in 3 seconds..."), false);
                 buildLoader.schedule(player.getServer(), 60, () -> {
                     resetBuild.hardReset(player.getServer().createCommandSourceStack().withPermission(2));
                     if (session.isGrindSession && grindMode.isGrinding(player)) {

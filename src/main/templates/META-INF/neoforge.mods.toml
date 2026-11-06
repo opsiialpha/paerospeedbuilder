@@ -10,7 +10,7 @@ logoFile="icon.png"
 authors="Paero"
 displayTest="IGNORE_SERVER_VERSION"
 description='''
-Paero's SpeedBuilder - practice speed building offline with previews,
+PaeroBuilder - practice speed building offline with previews,
 countdowns, accuracy checking and a stopwatch. Requires WorldEdit.
 '''
 

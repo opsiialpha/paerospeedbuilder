@@ -9,20 +9,20 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
-/** /sb finish ... : choose the text + colour shown in the middle of the screen when a build is completed. */
+/** /pb finish ... : choose the text + colour shown in the middle of the screen when a build is completed. */
 public class FinishCommand {
     private static final List<String> COLOR_NAMES = List.of(
         "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray",
         "dark_gray", "blue", "green", "aqua", "red", "light_purple", "yellow", "white");
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("sb").then(Commands.literal("finish")
+        dispatcher.register(Commands.literal("pb").then(Commands.literal("finish")
             .executes(ctx -> {
                 ServerPlayer player = ctx.getSource().getPlayerOrException();
-                player.displayClientMessage(Component.literal("\u00a76Finish screen: ").append(FinishDisplay.buildTitle(player.getUUID())), false);
-                player.displayClientMessage(Component.literal("\u00a77/sb finish text <text>  \u00a78(use &c, &l etc. for extra formatting)"), false);
-                player.displayClientMessage(Component.literal("\u00a77/sb finish color <name|#RRGGBB>"), false);
-                player.displayClientMessage(Component.literal("\u00a77/sb finish test  \u00a78| \u00a77/sb finish reset"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a76Finish screen: ").append(FinishDisplay.buildTitle(player.getUUID())), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish text <text>  \u00a78(use &c, &l etc. for extra formatting)"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish color <name|#RRGGBB>"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish test  \u00a78| \u00a77/pb finish reset"), false);
                 return 1;
             })
             .then(Commands.literal("text").then(Commands.argument("text", StringArgumentType.greedyString()).executes(ctx -> {
@@ -41,7 +41,7 @@ public class FinishCommand {
                     ServerPlayer player = ctx.getSource().getPlayerOrException();
                     String color = StringArgumentType.getString(ctx, "color");
                     if (FinishDisplay.parseColor(color) == null) {
-                        ctx.getSource().sendFailure(Component.literal("Unknown colour. Use a name like gold / red / light_purple or a hex code like #FF8800"));
+                        ctx.getSource().sendFailure(Theme.lit(ctx.getSource(), "Unknown colour. Use a name like gold / red / light_purple or a hex code like #FF8800"));
                         return 0;
                     }
                     SpeedBuilderConfig.setFinishColor(player.getUUID(), color);

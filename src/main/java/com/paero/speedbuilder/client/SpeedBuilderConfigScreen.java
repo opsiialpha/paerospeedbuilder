@@ -3,6 +3,7 @@ package com.paero.speedbuilder.client;
 import com.paero.speedbuilder.FinishDisplay;
 import com.paero.speedbuilder.Sfx;
 import com.paero.speedbuilder.SpeedBuilderConfig;
+import com.paero.speedbuilder.Theme;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -18,7 +19,7 @@ import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 
-/** In-game config screen (Mods list -> Paero's SpeedBuilder -> Config). Options are laid out in two columns. */
+/** In-game config screen (Mods list -> PaeroBuilder -> Config). Options are laid out in two columns. */
 public class SpeedBuilderConfigScreen extends Screen {
     private static final int COL_W = 150;
     private static final int GAP = 10;
@@ -33,10 +34,11 @@ public class SpeedBuilderConfigScreen extends Screen {
     private Button finishColorButton;
     private Button finishTimeColorButton;
     private Button difficultyButton;
+    private Button themeButton;
     private EditBox finishTextBox;
 
     public SpeedBuilderConfigScreen(Screen parent) {
-        super(Component.literal("Paero's SpeedBuilder Config"));
+        super(Component.literal("PaeroBuilder Config"));
         this.parent = parent;
     }
 
@@ -61,7 +63,7 @@ public class SpeedBuilderConfigScreen extends Screen {
         this.uuid = resolveUuid();
         int left = this.width / 2 - COL_W - GAP / 2;
         int right = this.width / 2 + GAP / 2;
-        int y = 40;
+        int y = 34;
 
         // Row 1: Build Preview | Preview Time
         previewButton = Button.builder(onOff("Build Preview", settings().previewEnabled), b -> {
@@ -118,6 +120,16 @@ public class SpeedBuilderConfigScreen extends Screen {
             .tooltip(Tooltip.create(Component.literal("Default: starting a build clears your inventory and gives you the blocks.\nPaero: starting a build never touches your inventory (nothing cleared, nothing given).")))
             .build();
         this.addRenderableWidget(difficultyButton);
+        y += ROW_H;
+
+        // Row 6: UI Theme (Default -> Dark -> Paero)
+        themeButton = Button.builder(themeLabel(), b -> {
+            SpeedBuilderConfig.setTheme(uuid, Theme.next(SpeedBuilderConfig.getTheme(uuid)));
+            b.setMessage(themeLabel());
+        }).bounds(this.width / 2 - COL_W / 2, y, COL_W, 20)
+            .tooltip(Tooltip.create(Component.literal("Default: normal colours, every countdown number has its own colour.\nDark: yellow chat text becomes light gray.\nPaero: everything in white-to-gray, with a gradient BUILD! title.")))
+            .build();
+        this.addRenderableWidget(themeButton);
 
         this.addRenderableWidget(Button.builder(Component.literal("Done"), b -> this.onClose())
             .bounds(this.width / 2 - 100, this.height - 30, 200, 20).build());
@@ -126,6 +138,10 @@ public class SpeedBuilderConfigScreen extends Screen {
     private Component difficultyLabel() {
         boolean paero = SpeedBuilderConfig.isPaero(uuid);
         return Component.literal("Difficulty: ").append(Component.literal(paero ? "Paero" : "Default").withStyle(paero ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.AQUA));
+    }
+
+    private Component themeLabel() {
+        return Component.literal("UI Theme: ").append(Component.literal(Theme.displayName(SpeedBuilderConfig.getTheme(uuid))).withStyle(ChatFormatting.AQUA));
     }
 
     private Component soundLabel() {
@@ -161,7 +177,7 @@ public class SpeedBuilderConfigScreen extends Screen {
         swatch(g, finishTimeColorButton, SpeedBuilderConfig.getFinishTimeColor(uuid), 0xFFFFFF);
 
         // live preview
-        int py = 40 + ROW_H * 5 + 2;
+        int py = 34 + ROW_H * 6 + 2;
         g.drawCenteredString(this.font, Component.literal("Preview").withStyle(ChatFormatting.GRAY), this.width / 2, py, 0xFFFFFF);
         g.drawCenteredString(this.font, FinishDisplay.timerComponent(uuid, "12.34s"), this.width / 2, py + 11, 0xFFFFFF);
         g.drawCenteredString(this.font, FinishDisplay.buildTitle(uuid), this.width / 2, py + 22, 0xFFFFFF);

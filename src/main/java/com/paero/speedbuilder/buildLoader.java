@@ -127,12 +127,12 @@ public class buildLoader {
         ServerLevel world = source.getLevel();
         try (InputStream stream = getBuildStream(buildName)) {
             if (stream == null) {
-                source.sendFailure(Component.literal("Could not find schematic: " + buildName));
+                source.sendFailure(Theme.lit(source, "Could not find schematic: " + buildName));
                 return 0;
             }
             ClipboardFormat format = ClipboardFormats.findByAlias("schem");
             if (format == null) {
-                source.sendFailure(Component.literal("Schematic format 'schem' is not supported!"));
+                source.sendFailure(Theme.lit(source, "Schematic format 'schem' is not supported!"));
                 return 0;
             }
             Clipboard clipboard = format.getReader(stream).read();
@@ -143,7 +143,7 @@ public class buildLoader {
             Operations.complete(operation);
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to place build: " + buildName));
+            source.sendFailure(Theme.lit(source, "Failed to place build: " + buildName));
             e.printStackTrace();
             return 0;
         }
@@ -160,7 +160,7 @@ public class buildLoader {
         counts.put(key, counts.getOrDefault(key, 0) + amount);
     }
 
-    /** Counts blocks in a clipboard the way the original mod did (doors, slabs, fluids, buttons...). */
+    /** Counts blocks in a clipboard as speed builders usually do (doors, slabs, fluids, buttons...). */
     private static Map<String, Integer> countBlocks(Clipboard clipboard, boolean includeTallPlants) {
         BlockVector3 min = clipboard.getMinimumPoint();
         BlockVector3 max = clipboard.getMaximumPoint();
@@ -271,13 +271,13 @@ public class buildLoader {
         }
         try (InputStream stream = getBuildStream(buildName)) {
             if (stream == null) {
-                player.displayClientMessage(Component.literal("\u00a7cCould not find schematic for block giving: " + buildName), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a7cCould not find schematic for block giving: " + buildName), false);
                 return;
             }
             Clipboard clipboard = readClipboard(stream);
             giveCounted(player, countBlocks(clipboard, true));
         } catch (Exception e) {
-            player.displayClientMessage(Component.literal("\u00a7cFailed to give required blocks for: " + buildName), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a7cFailed to give required blocks for: " + buildName), false);
             e.printStackTrace();
         }
     }
@@ -286,7 +286,7 @@ public class buildLoader {
         ServerLevel world = source.getLevel();
         ServerPlayer player = source.getPlayer();
         if (player == null) {
-            source.sendFailure(Component.literal("Must be run by a player"));
+            source.sendFailure(Theme.lit(source, "Must be run by a player"));
             return 0;
         }
         String playerId = player.getUUID().toString();
@@ -294,7 +294,7 @@ public class buildLoader {
         spbAccuracy.ACTIVE_SESSIONS.remove(player.getUUID());
         try (InputStream stream = getBuildStream(buildName)) {
             if (stream == null) {
-                source.sendFailure(Component.literal("Could not find schematic: " + buildName));
+                source.sendFailure(Theme.lit(source, "Could not find schematic: " + buildName));
                 return 0;
             }
             PREVIEWING.add(player.getUUID());
@@ -303,19 +303,44 @@ public class buildLoader {
             final BlockVector3 max = clipboard.getMaximumPoint();
             final BlockVector3 worldOrigin = BlockVector3.at(-3, 0, -3);
             MinecraftServer server = world.getServer();
-            int layers = max.y() - min.y() + 1;
-            // Build-up animation always takes 3 seconds (60 ticks) in total, however tall the build is.
+            // Only animate the layers that really contain blocks: empty (air) layers at the bottom or top
+            // of the schematic region must not count, otherwise small builds appear in a blink.
+            int firstY = Integer.MAX_VALUE;
+            int lastY = Integer.MIN_VALUE;
+            for (int y = min.y(); y <= max.y(); ++y) {
+                boolean hasBlock = false;
+                for (int x = min.x(); x <= max.x() && !hasBlock; ++x) {
+                    for (int z = min.z(); z <= max.z(); ++z) {
+                        if (!NeoForgeAdapter.adapt(clipboard.getBlock(BlockVector3.at(x, y, z))).isAir()) {
+                            hasBlock = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasBlock) {
+                    firstY = Math.min(firstY, y);
+                    lastY = Math.max(lastY, y);
+                }
+            }
+            if (firstY > lastY) {
+                firstY = min.y();
+                lastY = max.y();
+            }
+            final int animMinY = firstY;
+            final int animMaxY = lastY;
+            final int layers = animMaxY - animMinY + 1;
+            // Build-up animation always takes 3 seconds (60 ticks) in total, spread over the real height of the build.
             final int buildUpDuration = 60;
             final double buildUpStep = (double) buildUpDuration / (double) layers;
             int previewTimeSeconds = SpeedBuilderConfig.getPreviewTime(player.getUUID());
             int holdDuration = previewTimeSeconds == 0 ? 20 : previewTimeSeconds * 20;
             int countdownStart = buildUpDuration + holdDuration;
-            // Disappear animation starts when the "3" shows and ends when the countdown reaches 0 (BUILD!).
-            int teardownStart = countdownStart + 40;
+            // Disappear animation covers the last 2 seconds: it starts when the "2" shows and ends at BUILD!.
+            int teardownStart = countdownStart + 60;
             int blocksGiveTime = countdownStart + 100;
 
-            for (int y = min.y(); y <= max.y(); ++y) {
-                int localY = y - min.y();
+            for (int y = animMinY; y <= animMaxY; ++y) {
+                int localY = y - animMinY;
                 int delayTicks = (int) Math.floor(localY * buildUpStep);
                 final int py = y;
                 schedule(server, delayTicks, () -> {
@@ -335,32 +360,31 @@ public class buildLoader {
                 if (chatTick < 0) continue;
                 final int secondsLeft = n;
                 schedule(server, chatTick, () -> {
-                    String color = secondsLeft >= 4 ? "\u00a7a" : (secondsLeft == 3 ? "\u00a7e" : "\u00a7c");
-                    player.displayClientMessage(Component.literal("\u00a7eStarting in " + color + secondsLeft + "\u00a7e..."), false);
+                    String color = Theme.countdownCode(secondsLeft);
+                    player.displayClientMessage(Theme.lit(player, "\u00a7eStarting in " + color + secondsLeft + "\u00a7e..."), false);
                     Sfx.chatTick(player);
                 }, playerId);
             }
 
             int[] countdownTicks = new int[]{0, 20, 40, 60, 80, 100};
-            String[] countdownNumbers = new String[]{"\u00a7a5", "\u00a7e4", "\u00a7e3", "\u00a7c2", "\u00a7c1", "\u00a7a\u00a7lBUILD!"};
-            for (int i = 0; i < countdownNumbers.length; ++i) {
-                final String number = countdownNumbers[i];
-                final boolean isViewOver = i == 5;
+            for (int i = 0; i < countdownTicks.length; ++i) {
+                final int number = 5 - i; // 5, 4, 3, 2, 1, 0 (0 = BUILD!)
+                final boolean isViewOver = number == 0;
                 schedule(server, countdownStart + countdownTicks[i], () -> {
                     player.connection.send(new ClientboundSetTitlesAnimationPacket(10, isViewOver ? 20 : 15, isViewOver ? 10 : 5));
-                    player.connection.send(new ClientboundSetTitleTextPacket(Component.literal(number)));
+                    player.connection.send(new ClientboundSetTitleTextPacket(isViewOver ? Theme.buildTitle(player) : Theme.countdownTitle(player, number)));
                     if (isViewOver) {
                         Sfx.buildStart(player);
                     } else {
-                        Sfx.countdownTick(player, number.endsWith("1"));
+                        Sfx.countdownTick(player, number == 1);
                     }
                 }, playerId);
             }
 
-            // 3 -> 0 is 60 ticks; spread the layer removal over the first 58 of them so it is done right at 0
-            double teardownSpan = 58.0;
+            // 2 -> 0 is 40 ticks; spread the layer removal over the first 38 of them so it is done right at BUILD!
+            double teardownSpan = 38.0;
             for (int i = 0; i < layers; ++i) {
-                final int py = max.y() - i;
+                final int py = animMaxY - i;
                 int delayTicks = teardownStart + (layers == 1 ? (int) teardownSpan : (int) Math.round((double) i * teardownSpan / (double) (layers - 1)));
                 schedule(server, delayTicks, () -> {
                     for (int x = min.x(); x <= max.x(); ++x) {
@@ -393,10 +417,10 @@ public class buildLoader {
                         giveCounted(currentPlayer, counts);
                         long now = System.currentTimeMillis();
                         spbAccuracy.ACTIVE_SESSIONS.put(currentPlayer.getUUID(), new spbAccuracy.BuildSession(clipboard, min, max, worldOrigin, now, buildName, false));
-                        currentPlayer.displayClientMessage(Component.literal("\u00a7aYou have been given blocks!"), false);
+                        currentPlayer.displayClientMessage(Theme.lit(currentPlayer, "\u00a7aYou have been given blocks!"), false);
                     }
                     if (SpeedBuilderConfig.isPaero(currentPlayer.getUUID())) {
-                        currentPlayer.displayClientMessage(Component.literal("\u00a7aGo build!"), false);
+                        currentPlayer.displayClientMessage(Theme.lit(currentPlayer, "\u00a7aGo build!"), false);
                     }
                     long now = System.currentTimeMillis();
                     spbAccuracy.ACTIVE_SESSIONS.put(currentPlayer.getUUID(), new spbAccuracy.BuildSession(clipboard, min, max, worldOrigin, now, buildName, false));
@@ -406,7 +430,7 @@ public class buildLoader {
             }, playerId);
             return 1;
         } catch (Exception e) {
-            source.sendFailure(Component.literal("Failed to preview build: " + buildName));
+            source.sendFailure(Theme.lit(source, "Failed to preview build: " + buildName));
             e.printStackTrace();
             return 0;
         }

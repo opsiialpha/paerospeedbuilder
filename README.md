@@ -1,4 +1,4 @@
-# Paero's SpeedBuilder (NeoForge 1.21.1)
+# PaeroBuilder (NeoForge 1.21.1)
 
 Practice speed building offline: build previews, countdown, accuracy check, stopwatch and a finish screen.
 Requires **WorldEdit for NeoForge 1.21.1** (7.3.5+).
@@ -9,20 +9,33 @@ Needs JDK 21. The builds are in `builds.zip`; unzip them first:
     unzip -q builds.zip -d src/main/resources/assets/paerospeedbuilder/
     ./gradlew build          (Windows: gradlew.bat build)
 
-The jar ends up in `build/libs/paerospeedbuilder-1.3.0.jar`. Test with `./gradlew runClient`.
+The jar ends up in `build/libs/paerobuilder-1.3.1.jar`. Test with `./gradlew runClient`.
 
 ## Commands
-- `/sb <build>` - preview, countdown, then build (enters build mode, leaves it when you finish)
-- `/sb area` - 15x15 platform under your feet + 7 blocks of air above
-- `/sb grind <build>`, `/sb view <build>`, `/sb restart`, `/sb reset`, `/sb stop`
-- `/sb create|list|delete` - custom builds
-- `/sb time <build>` - best time
-- `/sb config` - settings (also in Mods -> Paero's SpeedBuilder -> Config)
-- `/sb finish text|color|test|reset` - finish title
+- `/pb <build>` - preview, countdown, then build (enters build mode, leaves it when you finish)
+- `/pb setup` - builds a 15x15 platform under your feet + 7 blocks of air above (no teleport, nothing else touched)
+- `/pb grind <build>`, `/pb view <build>`, `/pb restart`, `/pb reset`, `/pb stop`
+- `/pb create|list|delete` - custom builds
+- `/pb time <build>` - best time
+- `/pb config` - settings (also in Mods -> PaeroBuilder -> Config)
+- `/pb finish text|color|test|reset` - finish title
 
 ## Config
 - Build Preview / Preview Time
-- Finish Title Time (1-60 s, default 5) - `/sb config finishtime <seconds>`
-- Difficulty - `/sb config difficulty default|paero`
+- Finish Title Time (1-60 s, default 5) - `/pb config finishtime <seconds>`
+- Difficulty - `/pb config difficulty default|paero`
   - **Default**: starting a build clears your inventory and gives you the blocks
   - **Paero**: your inventory is never touched (nothing cleared, given, used up or refunded)
+- UI Theme - `/pb config theme default|dark|paero`
+  - **Default**: normal colours; every countdown number has its own colour (5 green, 4 aqua, 3 yellow, 2 orange, 1 red)
+  - **Dark**: same, but yellow chat text becomes light gray
+  - **Paero**: everything in white-to-gray, the countdown fades from white to gray and BUILD! is a white-to-gray gradient
+  - The finish title, finish time and stopwatch colours are yours to choose and are never changed by a theme
+
+## Build mode
+`/pb <build>` turns build mode on and it turns off when you finish. Your game mode is never changed.
+
+## Credits
+Rebuilt by [@paeromc](https://identiq.in/u/paeromc) using Claude.
+
+Follow me: https://identiq.in/u/paeromc
