@@ -20,6 +20,7 @@ import java.util.Set;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.fml.loading.FMLPaths;
@@ -27,8 +28,6 @@ import net.neoforged.fml.loading.FMLPaths;
 public class customBuilds {
     private static final String CUSTOM_BUILDS_FOLDER = FMLPaths.CONFIGDIR.get().resolve("paerospeedbuilder").resolve("custom_builds").toString() + File.separator;
     private static final Set<String> customBuildNames = new HashSet<String>();
-    private static final BlockVector3 BUILD_AREA_MIN = BlockVector3.at(-3, 0, -3);
-    private static final BlockVector3 BUILD_AREA_MAX = BlockVector3.at(3, 15, 3);
 
     private static void loadExistingCustomBuilds() {
         try {
@@ -69,12 +68,14 @@ public class customBuilds {
         }
         try {
             ServerLevel world = player.serverLevel();
+            BlockVector3 areaMin = BuildArea.origin(source.getServer());
+            BlockVector3 areaMax = areaMin.add(BuildArea.SIZE_XZ - 1, BuildArea.HEIGHT - 1, BuildArea.SIZE_XZ - 1);
             int minY = 999;
             int maxY = -999;
             boolean hasNonAirBlocks = false;
-            for (int y = BUILD_AREA_MIN.y(); y <= BUILD_AREA_MAX.y(); ++y) {
-                for (int x = BUILD_AREA_MIN.x(); x <= BUILD_AREA_MAX.x(); ++x) {
-                    for (int z = BUILD_AREA_MIN.z(); z <= BUILD_AREA_MAX.z(); ++z) {
+            for (int y = areaMin.y(); y <= areaMax.y(); ++y) {
+                for (int x = areaMin.x(); x <= areaMax.x(); ++x) {
+                    for (int z = areaMin.z(); z <= areaMax.z(); ++z) {
                         BlockPos mcPos = new BlockPos(x, y, z);
                         net.minecraft.world.level.block.state.BlockState mcBlockState = world.getBlockState(mcPos);
                         if (mcBlockState.isAir()) continue;
@@ -86,16 +87,16 @@ public class customBuilds {
             }
             if (!hasNonAirBlocks) {
                 player.displayClientMessage(Theme.lit(player, "\u00a7cThe build area is empty! Build something in the area first."), false);
-                player.displayClientMessage(Theme.lit(player, "\u00a77Build area: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Build area: " + BuildArea.rangeText(source.getServer())), false);
                 return 0;
             }
-            CuboidRegion region = new CuboidRegion(BlockVector3.at(BUILD_AREA_MIN.x(), minY, BUILD_AREA_MIN.z()), BlockVector3.at(BUILD_AREA_MAX.x(), maxY, BUILD_AREA_MAX.z()));
+            CuboidRegion region = new CuboidRegion(BlockVector3.at(areaMin.x(), minY, areaMin.z()), BlockVector3.at(areaMax.x(), maxY, areaMax.z()));
             BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
-            clipboard.setOrigin(BlockVector3.at(BUILD_AREA_MIN.x(), minY, BUILD_AREA_MIN.z()));
+            clipboard.setOrigin(BlockVector3.at(areaMin.x(), minY, areaMin.z()));
             int blockCount = 0;
             for (int y = minY; y <= maxY; ++y) {
-                for (int x = BUILD_AREA_MIN.x(); x <= BUILD_AREA_MAX.x(); ++x) {
-                    for (int z = BUILD_AREA_MIN.z(); z <= BUILD_AREA_MAX.z(); ++z) {
+                for (int x = areaMin.x(); x <= areaMax.x(); ++x) {
+                    for (int z = areaMin.z(); z <= areaMax.z(); ++z) {
                         BlockPos mcPos = new BlockPos(x, y, z);
                         net.minecraft.world.level.block.state.BlockState mcBlockState = world.getBlockState(mcPos);
                         com.sk89q.worldedit.world.block.BlockState weBlockState = NeoForgeAdapter.adapt(mcBlockState);
@@ -122,7 +123,7 @@ public class customBuilds {
                 customBuildNames.add(buildName);
                 player.displayClientMessage(Theme.lit(player, "\u00a7aCustom build '" + buildName + "' created successfully!"), false);
                 player.displayClientMessage(Theme.lit(player, "\u00a77Blocks: " + blockCount + " | Height: Y" + minY + " to Y" + maxY + " (" + (maxY - minY + 1) + " layers)"), false);
-                player.displayClientMessage(Theme.lit(player, "\u00a77Size: " + (BUILD_AREA_MAX.x() - BUILD_AREA_MIN.x() + 1) + "x" + (maxY - minY + 1) + "x" + (BUILD_AREA_MAX.z() - BUILD_AREA_MIN.z() + 1)), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77Size: " + (areaMax.x() - areaMin.x() + 1) + "x" + (maxY - minY + 1) + "x" + (areaMax.z() - areaMin.z() + 1)), false);
                 player.displayClientMessage(Theme.lit(player, "\u00a77Use \u00a7e/pb " + buildName + " \u00a77to practice this build!"), false);
                 return 1;
             }
@@ -195,7 +196,7 @@ public class customBuilds {
         }
         if (customBuildNames.isEmpty()) {
             player.displayClientMessage(Theme.lit(player, "\u00a7eNo custom builds found."), false);
-            player.displayClientMessage(Theme.lit(player, "\u00a77Build something in the area \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3) \u00a77then use \u00a7a/pb create <name>"), false);
+            player.displayClientMessage(Theme.lit(player, "\u00a77Build something in the area " + BuildArea.rangeText(source.getServer()) + " \u00a77then use \u00a7a/pb create <name>"), false);
             return 0;
         }
         player.displayClientMessage(Theme.lit(player, ("\u00a76Custom Builds (" + customBuildNames.size() + "):")), false);
@@ -214,9 +215,15 @@ public class customBuilds {
             source.sendFailure(Theme.lit(source, "You must be a player to use this command!"));
             return 0;
         }
+        MinecraftServer server = source.getServer();
         player.displayClientMessage(Theme.lit(player, "\u00a7eBuild Area Information:"), false);
-        player.displayClientMessage(Theme.lit(player, "\u00a77From: \u00a7e(-3, 0, -3) \u00a77to \u00a7e(3, 15, 3)"), false);
-        player.displayClientMessage(Theme.lit(player, "\u00a77Size: \u00a7e7x16x7 \u00a77blocks"), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a77From: " + BuildArea.rangeText(server)), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a77Size: \u00a7e" + BuildArea.SIZE_XZ + "x" + BuildArea.HEIGHT + "x" + BuildArea.SIZE_XZ + " \u00a77blocks"), false);
+        if (BuildArea.isSet(server)) {
+            player.displayClientMessage(Theme.lit(player, "\u00a77Dimension: \u00a7e" + BuildArea.dimension(server)), false);
+        } else {
+            player.displayClientMessage(Theme.lit(player, "\u00a77No setup yet, this is the default area. Use \u00a7a/pb setup \u00a77to place one where you stand."), false);
+        }
         player.displayClientMessage(Theme.lit(player, "\u00a77Build your structure in this area, then use \u00a7a/pb create <name> \u00a77to save it!"), false);
         return 1;
     }

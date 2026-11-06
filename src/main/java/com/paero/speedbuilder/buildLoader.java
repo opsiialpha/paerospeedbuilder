@@ -136,7 +136,7 @@ public class buildLoader {
                 return 0;
             }
             Clipboard clipboard = format.getReader(stream).read();
-            BlockVector3 pastePos = BlockVector3.at(-3, 0, 3);
+            BlockVector3 pastePos = BuildArea.origin(world.getServer()).add(0, 0, BuildArea.SIZE_XZ - 1);
             com.sk89q.worldedit.world.World weWorld = NeoForgeAdapter.adapt(world);
             ClipboardHolder holder = new ClipboardHolder(clipboard);
             Operation operation = holder.createPaste(weWorld).to(pastePos).ignoreAirBlocks(false).build();
@@ -301,7 +301,7 @@ public class buildLoader {
             final Clipboard clipboard = readClipboard(stream);
             final BlockVector3 min = clipboard.getMinimumPoint();
             final BlockVector3 max = clipboard.getMaximumPoint();
-            final BlockVector3 worldOrigin = BlockVector3.at(-3, 0, -3);
+            final BlockVector3 worldOrigin = BuildArea.origin(world.getServer());
             MinecraftServer server = world.getServer();
             // Only animate the layers that really contain blocks: empty (air) layers at the bottom or top
             // of the schematic region must not count, otherwise small builds appear in a blink.

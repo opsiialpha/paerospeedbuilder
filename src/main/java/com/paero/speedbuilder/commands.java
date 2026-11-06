@@ -128,7 +128,7 @@ public class commands {
             CommandSourceStack source = ctx.getSource();
             MutableComponent header = Component.literal("\u00a76\u00a7l\u2550\u2550\u2550\u2550\u2550\u2550\u2550 PaeroBuilder Commands \u2550\u2550\u2550\u2550\u2550\u2550\u2550");
             MutableComponent divider = Component.literal(("\u00a7b" + "\u2500".repeat(40)));
-            Component[] helpLines = new Component[]{Component.literal("\u00a7e/pb config \u00a77- Shows configuration menu with interactive buttons"), Component.literal("\u00a7e/pb <build> \u00a77- Loads a build with preview for speedbuilding practice"), Component.literal("\u00a7e/pb grind <build> \u00a77- Enables grind mode (auto-replenish, no preview)"), Component.literal("\u00a7e/pb view <build> \u00a77- Places complete build for learning purposes"), Component.literal(""), Component.literal("\u00a7e/pb create <name> \u00a77- Create custom build from build area"), Component.literal("\u00a7e/pb list \u00a77- List all custom builds"), Component.literal("\u00a7e/pb delete <name> \u00a77- Delete a custom build"), Component.literal(""), Component.literal("\u00a7e/pb buildmode <on/off> \u00a77- Toggles build mode manually"), Component.literal("\u00a7e/pb time <build> \u00a77- Shows your best recorded time"), Component.literal("\u00a7e/pb time reset <build> \u00a77- Resets your recorded time"), Component.literal(""), Component.literal("\u00a7e/pb stop \u00a77- Stops all sessions and clears area/inventory"), Component.literal("\u00a7e/pb reset \u00a77- Clears build area \u00a78(Default: Grave Key)"), Component.literal("\u00a7e/pb restart \u00a77- Resets area and starts countdown \u00a78(Default: F6)"), Component.literal("\u00a7e/pb setup \u00a77- Builds a 15x15 build platform under your feet (7 blocks of air above)")};
+            Component[] helpLines = new Component[]{Component.literal("\u00a7e/pb config \u00a77- Shows configuration menu with interactive buttons"), Component.literal("\u00a7e/pb <build> \u00a77- Loads a build with preview for speedbuilding practice"), Component.literal("\u00a7e/pb grind <build> \u00a77- Enables grind mode (auto-replenish, no preview)"), Component.literal("\u00a7e/pb view <build> \u00a77- Places complete build for learning purposes"), Component.literal(""), Component.literal("\u00a7e/pb create <name> \u00a77- Create custom build from build area"), Component.literal("\u00a7e/pb list \u00a77- List all custom builds"), Component.literal("\u00a7e/pb delete <name> \u00a77- Delete a custom build"), Component.literal(""), Component.literal("\u00a7e/pb buildmode <on/off> \u00a77- Toggles build mode manually"), Component.literal("\u00a7e/pb time <build> \u00a77- Shows your best recorded time"), Component.literal("\u00a7e/pb time reset <build> \u00a77- Resets your recorded time"), Component.literal(""), Component.literal("\u00a7e/pb stop \u00a77- Stops all sessions and clears area/inventory"), Component.literal("\u00a7e/pb reset \u00a77- Clears build area \u00a78(Default: Grave Key)"), Component.literal("\u00a7e/pb restart \u00a77- Resets area and starts countdown \u00a78(Default: F6)"), Component.literal("\u00a7e/pb setup \u00a77- Builds a 15x15 platform + the build area where you stand"), Component.literal("\u00a7e/pb resetup \u00a77- Deletes the existing setup and builds a new one where you stand"), Component.literal("\u00a7e/pb area \u00a77- Shows the build area and its coordinates")};
             source.sendSuccess(() -> Theme.wrap(source, header), false);
             source.sendSuccess(() -> Theme.wrap(source, divider), false);
             for (Component line : helpLines) {
@@ -165,7 +165,7 @@ public class commands {
             ServerLevel world = (ctx.getSource()).getLevel();
             BlockVector3 min = BlockVector3.at(-10, 0, -10);
             BlockVector3 max = BlockVector3.at(10, 50, 10);
-            BlockVector3 origin = BlockVector3.at(-3, 0, -3);
+            BlockVector3 origin = BuildArea.origin(ctx.getSource().getServer());
             buildLoader.clearDroppedItems(world, min, max, origin);
             spbAccuracy.ACTIVE_SESSIONS.remove(player.getUUID());
             if (buildMode.isInBuildMode(player)) {
@@ -188,7 +188,7 @@ public class commands {
             ServerLevel world = (ctx.getSource()).getLevel();
             BlockVector3 min = BlockVector3.at(-10, 0, -10);
             BlockVector3 max = BlockVector3.at(10, 50, 10);
-            BlockVector3 origin = BlockVector3.at(-3, 0, -3);
+            BlockVector3 origin = BuildArea.origin(ctx.getSource().getServer());
             buildLoader.clearDroppedItems(world, min, max, origin);
             spbAccuracy.BuildSession session = spbAccuracy.ACTIVE_SESSIONS.get(player.getUUID());
             if (session == null) {
@@ -260,7 +260,7 @@ public class commands {
             ServerLevel world = (ctx.getSource()).getLevel();
             BlockVector3 min = BlockVector3.at(-10, 0, -10);
             BlockVector3 max = BlockVector3.at(10, 50, 10);
-            BlockVector3 origin = BlockVector3.at(-3, 0, -3);
+            BlockVector3 origin = BuildArea.origin(ctx.getSource().getServer());
             buildLoader.clearDroppedItems(world, min, max, origin);
             spbAccuracy.ACTIVE_SESSIONS.remove(player.getUUID());
             player.displayClientMessage(Theme.lit(player, "\u00a7cGrind Mode stopped."), false);
@@ -365,7 +365,7 @@ public class commands {
             ServerLevel world = (ctx.getSource()).getLevel();
             BlockVector3 min = BlockVector3.at(-10, 0, -10);
             BlockVector3 max = BlockVector3.at(10, 50, 10);
-            BlockVector3 origin = BlockVector3.at(-3, 0, -3);
+            BlockVector3 origin = BuildArea.origin(ctx.getSource().getServer());
             buildLoader.clearDroppedItems(world, min, max, origin);
             return result;
         }))).then(((Commands.literal("config").executes(ctx -> {
@@ -430,7 +430,7 @@ public class commands {
                             Clipboard clipboard = reader.read();
                             BlockVector3 min = clipboard.getMinimumPoint();
                             BlockVector3 max = clipboard.getMaximumPoint();
-                            BlockVector3 worldOrigin = BlockVector3.at(-3, 0, -3);
+                            BlockVector3 worldOrigin = BuildArea.origin(player.getServer());
                             long now = System.currentTimeMillis();
                             spbAccuracy.ACTIVE_SESSIONS.put(player.getUUID(), new spbAccuracy.BuildSession(clipboard, min, max, worldOrigin, now, buildName, false));
                         }

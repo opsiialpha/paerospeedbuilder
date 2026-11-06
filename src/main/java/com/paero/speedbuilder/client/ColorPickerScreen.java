@@ -81,7 +81,7 @@ public class ColorPickerScreen extends Screen {
         }
         this.minecraft.getTextureManager().register(wheelLocation, wheelTexture);
 
-        hexBox = new EditBox(this.font, rightX, wheelY + 30, 84, 18, Component.literal("Hex"));
+        hexBox = new EditBox(this.font, rightX, wheelY + 20, 84, 18, Component.literal("Hex"));
         hexBox.setMaxLength(7);
         hexBox.setFilter(s -> s.matches("#?[0-9a-fA-F]{0,6}"));
         hexBox.setResponder(text -> {
@@ -182,12 +182,20 @@ public class ColorPickerScreen extends Screen {
         syncHexBox();
     }
 
+    // Preset swatches: 16x16 including the black border, 18 px apart. The 4x4 grid starts under the hex box
+    // and its bottom edge lines up with the bottom edge of the colour wheel frame (wheelY + WHEEL + 2),
+    // so it can never reach the Apply / Cancel buttons below.
+    private static final int PRESET_SIZE = 16;
+    private static final int PRESET_PITCH = 18;
+
     private int presetX(int i) {
-        return rightX + (i % 4) * 22;
+        int gridWidth = 3 * PRESET_PITCH + PRESET_SIZE;
+        return rightX - 1 + (86 - gridWidth) / 2 + (i % 4) * PRESET_PITCH;
     }
 
     private int presetY(int i) {
-        return wheelY + 56 + (i / 4) * 22;
+        int gridHeight = 3 * PRESET_PITCH + PRESET_SIZE;
+        return wheelY + WHEEL + 2 - gridHeight + (i / 4) * PRESET_PITCH;
     }
 
     @Override
@@ -209,7 +217,7 @@ public class ColorPickerScreen extends Screen {
             for (int i = 0; i < PRESETS.length; ++i) {
                 int px = presetX(i);
                 int py = presetY(i);
-                if (mx >= px && mx < px + 18 && my >= py && my < py + 18) {
+                if (mx >= px && mx < px + PRESET_SIZE && my >= py && my < py + PRESET_SIZE) {
                     setFromRgb(PRESETS[i]);
                     syncHexBox();
                     return true;
@@ -262,15 +270,15 @@ public class ColorPickerScreen extends Screen {
         g.fill(barX - 1, barMarker, barX + BAR_W + 1, barMarker + 1, 0xFFFFFFFF);
 
         // current colour swatch
-        g.fill(rightX - 1, wheelY - 1, rightX + 85, wheelY + 25, 0xFF000000);
-        g.fill(rightX, wheelY, rightX + 84, wheelY + 24, 0xFF000000 | hsvToRgb(hue, sat, val));
+        g.fill(rightX - 1, wheelY - 1, rightX + 85, wheelY + 18, 0xFF000000);
+        g.fill(rightX, wheelY, rightX + 84, wheelY + 17, 0xFF000000 | hsvToRgb(hue, sat, val));
 
         // presets
         for (int i = 0; i < PRESETS.length; ++i) {
             int px = presetX(i);
             int py = presetY(i);
-            g.fill(px - 1, py - 1, px + 19, py + 19, 0xFF000000);
-            g.fill(px, py, px + 18, py + 18, 0xFF000000 | PRESETS[i]);
+            g.fill(px, py, px + PRESET_SIZE, py + PRESET_SIZE, 0xFF000000);
+            g.fill(px + 1, py + 1, px + PRESET_SIZE - 1, py + PRESET_SIZE - 1, 0xFF000000 | PRESETS[i]);
         }
     }
 }

@@ -7,11 +7,12 @@ modId="${mod_id}"
 version="${mod_version}"
 displayName="${mod_name}"
 logoFile="icon.png"
-authors="Paero"
+authors="@paeromc on YouTube"
 displayTest="IGNORE_SERVER_VERSION"
 description='''
-PaeroBuilder - practice speed building offline with previews,
-countdowns, accuracy checking and a stopwatch. Requires WorldEdit.
+A speedbuilding mod made by @paeromc for his YouTube channel.
+Learn each build with a preview, beat the countdown and check
+your accuracy against the clock. Requires WorldEdit.
 '''
 
 [[mixins]]

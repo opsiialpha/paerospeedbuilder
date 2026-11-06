@@ -1,5 +1,6 @@
 package com.paero.speedbuilder.mixin;
 
+import com.paero.speedbuilder.BuildArea;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelAccessor;
@@ -16,12 +17,12 @@ public class FlowableFluidMixin {
     // Yarn "flow" == Mojang "spreadTo"
     @Inject(method = "spreadTo", at = @At("HEAD"), cancellable = true)
     private void paerospeedbuilder$preventFlow(LevelAccessor level, BlockPos pos, BlockState state, Direction direction, FluidState fluidState, CallbackInfo ci) {
-        if (paerospeedbuilder$isInBuildArea(pos)) {
+        if (paerospeedbuilder$isInBuildArea(level, pos)) {
             ci.cancel();
         }
     }
 
-    private static boolean paerospeedbuilder$isInBuildArea(BlockPos pos) {
-        return pos.getX() >= -10 && pos.getX() <= 10 && pos.getZ() >= -10 && pos.getZ() <= 10 && pos.getY() >= 0 && pos.getY() <= 50;
+    private static boolean paerospeedbuilder$isInBuildArea(LevelAccessor level, BlockPos pos) {
+        return BuildArea.isNearForFluid(level.getServer(), pos);
     }
 }

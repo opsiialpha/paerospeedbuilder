@@ -9,10 +9,11 @@ import net.minecraft.world.level.block.Blocks;
 public class resetBuild {
     public static int hardReset(CommandSourceStack source) {
         ServerLevel world = source.getLevel();
-        for (int x = -3; x <= 3; ++x) {
-            for (int y = 0; y <= 16; ++y) {
-                for (int z = -3; z <= 3; ++z) {
-                    world.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+        BlockPos min = BuildArea.minPos(source.getServer());
+        for (int x = 0; x < BuildArea.SIZE_XZ; ++x) {
+            for (int y = 0; y <= BuildArea.HEIGHT; ++y) {
+                for (int z = 0; z < BuildArea.SIZE_XZ; ++z) {
+                    world.setBlock(min.offset(x, y, z), Blocks.AIR.defaultBlockState(), 3);
                 }
             }
         }

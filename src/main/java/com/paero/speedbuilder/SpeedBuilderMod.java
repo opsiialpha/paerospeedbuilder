@@ -33,6 +33,7 @@ public class SpeedBuilderMod {
         commands.register(dispatcher);
         FinishCommand.register(dispatcher);
         SettingsCommand.register(dispatcher);
+        worldSetup.registerCommands(dispatcher);
     }
 
     private static void onServerChat(ServerChatEvent event) {

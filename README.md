@@ -13,7 +13,9 @@ The jar ends up in `build/libs/paerobuilder-1.3.1.jar`. Test with `./gradlew run
 
 ## Commands
 - `/pb <build>` - preview, countdown, then build (enters build mode, leaves it when you finish)
-- `/pb setup` - builds a 15x15 platform under your feet + 7 blocks of air above (no teleport, nothing else touched)
+- `/pb setup` - builds a 15x15 platform under your feet and puts the 7x16x7 build area on top of it, centred on you (16 blocks of air above, no teleport). If a setup already exists it tells you to use `/pb resetup`
+- `/pb resetup` - deletes the existing setup and builds a new one where you are standing
+- `/pb area` - shows the build area and its coordinates
 - `/pb grind <build>`, `/pb view <build>`, `/pb restart`, `/pb reset`, `/pb stop`
 - `/pb create|list|delete` - custom builds
 - `/pb time <build>` - best time
@@ -29,7 +31,7 @@ The jar ends up in `build/libs/paerobuilder-1.3.1.jar`. Test with `./gradlew run
 - UI Theme - `/pb config theme default|dark|paero`
   - **Default**: normal colours; every countdown number has its own colour (5 green, 4 aqua, 3 yellow, 2 orange, 1 red)
   - **Dark**: same, but yellow chat text becomes light gray
-  - **Paero**: everything in white-to-gray, the countdown fades from white to gray and BUILD! is a white-to-gray gradient
+  - **Paero**: everything in white-to-gray, the countdown fades from dark gray (5) to white (1) and BUILD! is a white-to-gray gradient
   - The finish title, finish time and stopwatch colours are yours to choose and are never changed by a theme
 
 ## Build mode

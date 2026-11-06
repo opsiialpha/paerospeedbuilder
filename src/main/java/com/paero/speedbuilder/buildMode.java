@@ -34,11 +34,8 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 public class buildMode {
     private static final Set<UUID> BUILD_MODE_PLAYERS = new HashSet<>();
 
-    private static boolean isInsideBuildArea(BlockPos pos) {
-        int x = pos.getX();
-        int y = pos.getY();
-        int z = pos.getZ();
-        return x >= -3 && x <= 3 && y >= 0 && y <= 11 && z >= -3 && z <= 3;
+    private static boolean isInsideBuildArea(MinecraftServer server, BlockPos pos) {
+        return BuildArea.contains(server, pos);
     }
 
     private static String blockKey(net.minecraft.world.level.block.Block block) {
@@ -132,8 +129,8 @@ public class buildMode {
             event.setCanceled(true);
             return;
         }
-        if (pos.getY() <= -1) {
-            serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cCan't break blocks at or below Y = -1!"), false);
+        if (BuildArea.isBelowFloor(serverPlayer.getServer(), pos)) {
+            serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cCan't break blocks at or below Y = " + (BuildArea.minPos(serverPlayer.getServer()).getY() - 1) + "!"), false);
             event.setCanceled(true);
             return;
         }
@@ -227,7 +224,7 @@ public class buildMode {
             if (itemInHand.getItem() == Items.WATER_BUCKET) {
                 BlockPos targetPos = hitResult.getBlockPos().relative(hitResult.getDirection());
                 BlockState targetState = world.getBlockState(targetPos);
-                if (!isInsideBuildArea(targetPos)) {
+                if (!isInsideBuildArea(server, targetPos)) {
                     serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
                     deny(event);
                     return;
@@ -268,7 +265,7 @@ public class buildMode {
         final int countBefore = itemInHand.getCount();
         final BlockPos targetPos = hitResult.getBlockPos().relative(hitResult.getDirection());
         final BlockState stateBefore = world.getBlockState(targetPos);
-        if (!isInsideBuildArea(targetPos)) {
+        if (!isInsideBuildArea(server, targetPos)) {
             serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
             deny(event);
             return;
@@ -295,7 +292,7 @@ public class buildMode {
                 actualPlacementPos = targetPos;
                 actualStateBefore = stateBefore;
             }
-            if (!isInsideBuildArea(actualPlacementPos)) {
+            if (!isInsideBuildArea(server, actualPlacementPos)) {
                 serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
                 deny(event);
                 return;
