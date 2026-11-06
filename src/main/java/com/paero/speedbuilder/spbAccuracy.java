@@ -24,6 +24,8 @@ public class spbAccuracy {
     public static final Set<UUID> GRIND_ACCURACY_ENABLED = new HashSet<UUID>();
     public static final Map<UUID, BuildSession> ACTIVE_SESSIONS = new HashMap<UUID, BuildSession>();
     private static final Set<String> IGNORED_KEYS = Set.of("triggered", "powered", "lit");
+    /** How long the finished build stays in the world before the area is cleared (5 seconds). */
+    public static final int FINISH_HOLD_TICKS = 100;
 
     private static String filterBlockStateString(String blockStateStr) {
         if (!blockStateStr.contains("[")) {
@@ -88,7 +90,16 @@ public class spbAccuracy {
         }
         double accuracy = total == 0 ? 0.0 : 100.0 * (double)correct / (double)total;
         player.displayClientMessage(Theme.lit(player, ("\u00a7eBuild Accuracy: \u00a7a" + String.format("%.1f", accuracy) + "% \u00a77(" + correct + "/" + total + ")")), false);
-        return correct == total ? 1 : 0;
+        int extras = 0;
+        ServerLevel checkLevel = source.getLevel();
+        BuildSession active = ACTIVE_SESSIONS.get(player.getUUID());
+        if (active != null && active.clipboard == clipboard) {
+            extras = FinishScan.extraBlocks(checkLevel, active, worldOrigin, null, 0);
+        }
+        if (extras > 0) {
+            player.displayClientMessage(Theme.lit(player, "\u00a7c" + extras + " extra block(s) in the build area that are not part of the build!"), false);
+        }
+        return correct == total && extras == 0 ? 1 : 0;
     }
 
     static boolean withinBlockMatch(String expectedId, BlockState expected, net.minecraft.world.level.block.state.BlockState actual) {
@@ -315,7 +326,7 @@ public class spbAccuracy {
         return StateMatch.matches(spbAccuracy.weProperties(expected), spbAccuracy.mcProperties(actual));
     }
 
-    private static Map<String, String> weProperties(BlockState state) {
+    static Map<String, String> weProperties(BlockState state) {
         HashMap<String, String> props = new HashMap<String, String>();
         for (Map.Entry<com.sk89q.worldedit.registry.state.Property<?>, Object> entry : state.getStates().entrySet()) {
             props.put(entry.getKey().getName(), String.valueOf(entry.getValue()));
@@ -426,6 +437,11 @@ public class spbAccuracy {
                 if (session.isCompleted) {
                     return;
                 }
+                // Every block is right, but a stray block anywhere else in the area (or in a gap that should
+                // be air) means the build is not finished.
+                if (FinishScan.extraBlocks(world, session, origin, null, 0) > 0) {
+                    return;
+                }
                 session.isCompleted = true;
                 long finish = System.currentTimeMillis();
                 long elapsedMs = Math.max(0L, finish - session.startTime);
@@ -450,8 +466,8 @@ public class spbAccuracy {
                     // Build finished -> leave build mode (grind mode stays in it until /pb grind stop)
                     buildMode.disable(player);
                 }
-                player.displayClientMessage(Theme.lit(player, "\u00a7eArea will reset in 3 seconds..."), false);
-                buildLoader.schedule(player.getServer(), 60, () -> {
+                player.displayClientMessage(Theme.lit(player, "\u00a7eArea will reset in " + (FINISH_HOLD_TICKS / 20) + " seconds..."), false);
+                buildLoader.schedule(player.getServer(), FINISH_HOLD_TICKS, () -> {
                     resetBuild.hardReset(player.getServer().createCommandSourceStack().withPermission(2));
                     if (session.isGrindSession && grindMode.isGrinding(player)) {
                         buildLoader.schedule(player.getServer(), 5, () -> grindMode.continueGrindSession(player, session.buildName), player.getUUID().toString());

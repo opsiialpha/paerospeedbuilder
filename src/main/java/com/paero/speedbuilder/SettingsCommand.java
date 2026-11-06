@@ -9,7 +9,8 @@ import net.minecraft.server.level.ServerPlayer;
 
 /**
  * /pb config finishtime <seconds>      - how long the finish title stays on screen
- * /pb config difficulty <default|paero> - difficulty setting
+ * /pb config difficulty <default|paero|supereasy> - difficulty setting
+ * /pb config autoorient <on|off>       - turn placed blocks to the way the build needs them
  * /pb config theme <default|dark|paero> - UI theme
  * (merged into the existing /pb config node by Brigadier)
  */
@@ -27,7 +28,11 @@ public class SettingsCommand {
             })))
             .then(Commands.literal("difficulty")
                 .then(Commands.literal("default").executes(ctx -> setDifficulty(ctx.getSource(), SpeedBuilderConfig.DIFFICULTY_DEFAULT)))
-                .then(Commands.literal("paero").executes(ctx -> setDifficulty(ctx.getSource(), SpeedBuilderConfig.DIFFICULTY_PAERO))))
+                .then(Commands.literal("paero").executes(ctx -> setDifficulty(ctx.getSource(), SpeedBuilderConfig.DIFFICULTY_PAERO)))
+                .then(Commands.literal("supereasy").executes(ctx -> setDifficulty(ctx.getSource(), SpeedBuilderConfig.DIFFICULTY_SUPEREASY))))
+            .then(Commands.literal("autoorient")
+                .then(Commands.literal("on").executes(ctx -> setAutoOrient(ctx.getSource(), true)))
+                .then(Commands.literal("off").executes(ctx -> setAutoOrient(ctx.getSource(), false))))
             .then(Commands.literal("theme")
                 .then(Commands.literal("default").executes(ctx -> setTheme(ctx.getSource(), Theme.DEFAULT)))
                 .then(Commands.literal("dark").executes(ctx -> setTheme(ctx.getSource(), Theme.DARK)))
@@ -42,10 +47,19 @@ public class SettingsCommand {
         return 1;
     }
 
+    private static int setAutoOrient(CommandSourceStack source, boolean enabled) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        ServerPlayer player = source.getPlayerOrException();
+        SpeedBuilderConfig.setAutoOrient(player.getUUID(), enabled);
+        player.displayClientMessage(Theme.lit(player, "\u00a7aAuto Orient " + (enabled ? "enabled" : "disabled")
+            + (!enabled && SpeedBuilderConfig.isSuperEasy(player.getUUID()) ? " \u00a77(SuperEasy keeps it on)" : "")), false);
+        commands.showConfig(source, player);
+        return 1;
+    }
+
     private static int setDifficulty(CommandSourceStack source, String difficulty) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         ServerPlayer player = source.getPlayerOrException();
         SpeedBuilderConfig.setDifficulty(player.getUUID(), difficulty);
-        player.displayClientMessage(Theme.lit(player, "\u00a7aDifficulty set to " + (SpeedBuilderConfig.DIFFICULTY_PAERO.equals(difficulty) ? "Paero" : "Default")), false);
+        player.displayClientMessage(Theme.lit(player, "\u00a7aDifficulty set to " + SpeedBuilderConfig.difficultyName(difficulty)), false);
         commands.showConfig(source, player);
         return 1;
     }

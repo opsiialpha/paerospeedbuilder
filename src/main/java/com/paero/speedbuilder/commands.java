@@ -98,12 +98,28 @@ public class commands {
         int finishTime = SpeedBuilderConfig.getFinishTitleTime(player.getUUID());
         MutableComponent finishTimeLine = Component.literal("\u00a7e" + String.format("%-14s", "Finish Title Time: ")).append(Component.literal(finishTime + "s").withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD)).append(Component.literal(" ")).append(Component.literal("[Set]").withStyle(ChatFormatting.LIGHT_PURPLE).withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/pb config finishtime "))));
         source.sendSuccess(() -> Theme.wrap(player, finishTimeLine), false);
-        boolean paero = SpeedBuilderConfig.isPaero(player.getUUID());
-        MutableComponent difficultyLine = Component.literal("\u00a7e" + String.format("%-14s", "Difficulty: "))
-            .append(Component.literal("[ Default ]").withStyle(!paero ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN).withStyle(s -> paero ? s.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pb config difficulty default")) : s))
-            .append(Component.literal(" "))
-            .append(Component.literal("[ Paero ]").withStyle(paero ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN).withStyle(s -> !paero ? s.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pb config difficulty paero")) : s));
+        String difficulty = SpeedBuilderConfig.getDifficulty(player.getUUID());
+        MutableComponent difficultyLine = Component.literal("\u00a7e" + String.format("%-14s", "Difficulty: "));
+        String[] difficultyIds = new String[]{SpeedBuilderConfig.DIFFICULTY_DEFAULT, SpeedBuilderConfig.DIFFICULTY_PAERO, SpeedBuilderConfig.DIFFICULTY_SUPEREASY};
+        for (int d = 0; d < difficultyIds.length; ++d) {
+            final String id = difficultyIds[d];
+            boolean selected = id.equals(difficulty);
+            MutableComponent button = Component.literal("[ " + SpeedBuilderConfig.difficultyName(id) + " ]").withStyle(selected ? ChatFormatting.DARK_GRAY : ChatFormatting.GREEN);
+            if (!selected) {
+                button = button.withStyle(s -> s.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pb config difficulty " + id)));
+            }
+            difficultyLine.append(button);
+            if (d < difficultyIds.length - 1) {
+                difficultyLine.append(Component.literal(" "));
+            }
+        }
         source.sendSuccess(() -> Theme.wrap(player, difficultyLine), false);
+        boolean autoOrient = SpeedBuilderConfig.isAutoOrient(player.getUUID());
+        String autoOrientLabel = String.format("%-14s", "Auto Orient: ");
+        MutableComponent autoOrientStatus = Component.literal((autoOrient ? "ENABLED" : "DISABLED")).withStyle(s -> s.withColor(autoOrient ? 65280 : 0xFF0000).withBold(true));
+        MutableComponent autoOrientLine = Component.literal("\u00a7e" + autoOrientLabel).append(autoOrientStatus).append(Component.literal(" \u00a7f| "))
+            .append(commands.makeToggleButton(autoOrient, true, "/pb config autoorient on")).append(Component.literal(" ")).append(commands.makeToggleButton(autoOrient, false, "/pb config autoorient off"));
+        source.sendSuccess(() -> Theme.wrap(player, autoOrientLine), false);
         String theme = SpeedBuilderConfig.getTheme(player.getUUID());
         MutableComponent themeLine = Component.literal("\u00a7e" + String.format("%-14s", "UI Theme: "));
         String[] themeIds = new String[]{Theme.DEFAULT, Theme.DARK, Theme.PAERO};

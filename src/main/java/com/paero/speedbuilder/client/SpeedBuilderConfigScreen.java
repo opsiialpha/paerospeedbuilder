@@ -35,6 +35,7 @@ public class SpeedBuilderConfigScreen extends Screen {
     private Button finishTimeColorButton;
     private Button difficultyButton;
     private Button themeButton;
+    private Button autoOrientButton;
     private EditBox finishTextBox;
 
     public SpeedBuilderConfigScreen(Screen parent) {
@@ -113,20 +114,30 @@ public class SpeedBuilderConfigScreen extends Screen {
         // Row 5: Finish Title Time | Difficulty
         this.addRenderableWidget(new FinishTimeSlider(left, y, COL_W, 20, SpeedBuilderConfig.getFinishTitleTime(uuid)));
         difficultyButton = Button.builder(difficultyLabel(), b -> {
-            boolean toPaero = !SpeedBuilderConfig.isPaero(uuid);
-            SpeedBuilderConfig.setDifficulty(uuid, toPaero ? SpeedBuilderConfig.DIFFICULTY_PAERO : SpeedBuilderConfig.DIFFICULTY_DEFAULT);
+            SpeedBuilderConfig.setDifficulty(uuid, SpeedBuilderConfig.nextDifficulty(SpeedBuilderConfig.getDifficulty(uuid)));
             b.setMessage(difficultyLabel());
+            if (autoOrientButton != null) {
+                autoOrientButton.setMessage(autoOrientLabel());
+            }
         }).bounds(right, y, COL_W, 20)
-            .tooltip(Tooltip.create(Component.literal("Default: starting a build clears your inventory and gives you the blocks.\nPaero: starting a build never touches your inventory (nothing cleared, nothing given).")))
+            .tooltip(Tooltip.create(Component.literal("Default: starting a build clears your inventory and gives you the blocks.\nPaero: starting a build never touches your inventory (nothing cleared, nothing given).\nSuperEasy: like Paero, plus Auto Orient and auto place: right-click a block face and the block the build needs is placed for you, switching your hotbar to it (or pulling it from your inventory).")))
             .build();
         this.addRenderableWidget(difficultyButton);
         y += ROW_H;
 
-        // Row 6: UI Theme (Default -> Dark -> Paero)
+        // Row 6: Auto Orient | UI Theme (Default -> Dark -> Paero)
+        autoOrientButton = Button.builder(autoOrientLabel(), b -> {
+            settings().autoOrient = !settings().autoOrient;
+            SpeedBuilderConfig.saveConfig();
+            b.setMessage(autoOrientLabel());
+        }).bounds(left, y, COL_W, 20)
+            .tooltip(Tooltip.create(Component.literal("Turns blocks you place (stairs, logs, trapdoors, ...) to the direction the build needs.\nAlways on in SuperEasy difficulty.")))
+            .build();
+        this.addRenderableWidget(autoOrientButton);
         themeButton = Button.builder(themeLabel(), b -> {
             SpeedBuilderConfig.setTheme(uuid, Theme.next(SpeedBuilderConfig.getTheme(uuid)));
             b.setMessage(themeLabel());
-        }).bounds(this.width / 2 - COL_W / 2, y, COL_W, 20)
+        }).bounds(right, y, COL_W, 20)
             .tooltip(Tooltip.create(Component.literal("Default: normal colours, every countdown number has its own colour.\nDark: yellow chat text becomes light gray.\nPaero: everything in white-to-gray, with a gradient BUILD! title.")))
             .build();
         this.addRenderableWidget(themeButton);
@@ -136,8 +147,15 @@ public class SpeedBuilderConfigScreen extends Screen {
     }
 
     private Component difficultyLabel() {
-        boolean paero = SpeedBuilderConfig.isPaero(uuid);
-        return Component.literal("Difficulty: ").append(Component.literal(paero ? "Paero" : "Default").withStyle(paero ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.AQUA));
+        String difficulty = SpeedBuilderConfig.getDifficulty(uuid);
+        ChatFormatting color = SpeedBuilderConfig.DIFFICULTY_SUPEREASY.equals(difficulty) ? ChatFormatting.GREEN
+            : (SpeedBuilderConfig.DIFFICULTY_PAERO.equals(difficulty) ? ChatFormatting.LIGHT_PURPLE : ChatFormatting.AQUA);
+        return Component.literal("Difficulty: ").append(Component.literal(SpeedBuilderConfig.difficultyName(difficulty)).withStyle(color));
+    }
+
+    private Component autoOrientLabel() {
+        boolean forced = SpeedBuilderConfig.isSuperEasy(uuid);
+        return onOff("Auto Orient", SpeedBuilderConfig.isAutoOrient(uuid)).copy().append(Component.literal(forced ? " (SuperEasy)" : "").withStyle(ChatFormatting.GRAY));
     }
 
     private Component themeLabel() {

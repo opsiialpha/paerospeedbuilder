@@ -250,6 +250,17 @@ public class buildMode {
             return;
         }
 
+        // SuperEasy: right-click a block face and the block the build needs there is placed for you
+        // (the hotbar switches to it, or it is pulled in from the inventory).
+        if (hand == InteractionHand.MAIN_HAND && SpeedBuilderConfig.isSuperEasy(serverPlayer.getUUID())) {
+            InteractionResult auto = AutoBuild.tryAutoPlace(serverPlayer, serverPlayer.serverLevel(), hitResult);
+            if (auto != null) {
+                event.setCanceled(true);
+                event.setCancellationResult(auto);
+                return;
+            }
+        }
+
         Item heldItem = itemInHand.getItem();
         if (!(heldItem instanceof BlockItem blockItem)) {
             return;
@@ -269,6 +280,13 @@ public class buildMode {
             serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cYou cannot place blocks outside the build area!"), false);
             deny(event);
             return;
+        }
+        if (SpeedBuilderConfig.isAutoOrient(serverPlayer.getUUID())) {
+            // Auto Orient: once the click has been handled, turn whatever was placed to the way the build needs it.
+            final BlockPos clickedSpot = hitResult.getBlockPos();
+            final BlockState clickedBefore = world.getBlockState(clickedSpot);
+            final net.minecraft.server.level.ServerLevel serverLevel = serverPlayer.serverLevel();
+            server.execute(() -> server.execute(() -> AutoBuild.orientAfterPlacement(serverPlayer, serverLevel, targetPos, stateBefore, clickedSpot, clickedBefore)));
         }
         boolean isSlabItem = blockItem.getBlock().toString().contains("slab");
         if (isSlabItem) {

@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 /**
  * Finish detection helper. The build area is bigger than the builds, so a build counts as finished when it is
  * complete at the spot where the preview was shown, or complete anywhere else inside the build area.
+ * A build is only complete when no extra block (anything not part of the build) is left in the area.
  */
 public final class FinishScan {
     private FinishScan() {
@@ -74,7 +75,50 @@ public final class FinishScan {
                 }
             }
         }
-        return checked > 0;
+        // Every block of the build is right; it only counts when nothing else is standing in the area either.
+        return checked > 0 && extraBlocks(world, session, origin, null, 0) == 0;
+    }
+
+    /**
+     * Counts the blocks inside the whole build area that are NOT part of the build when it sits at {@code origin}:
+     * anything solid where the build wants air (inside the build's own box, so holes and gaps are checked too)
+     * and anything at all outside the build's box. Fills {@code details} with the first {@code limit} of them.
+     */
+    public static int extraBlocks(ServerLevel world, spbAccuracy.BuildSession session, BlockVector3 origin, List<String> details, int limit) {
+        MinecraftServer server = world.getServer();
+        if (server == null) {
+            return 0;
+        }
+        Clipboard clipboard = session.clipboard;
+        BlockVector3 min = session.min;
+        BlockVector3 max = session.max;
+        BlockPos corner = BuildArea.minPos(server);
+        int extra = 0;
+        for (int y = 0; y < BuildArea.HEIGHT; ++y) {
+            for (int x = 0; x < BuildArea.SIZE_XZ; ++x) {
+                for (int z = 0; z < BuildArea.SIZE_XZ; ++z) {
+                    BlockPos pos = corner.offset(x, y, z);
+                    net.minecraft.world.level.block.state.BlockState actual = world.getBlockState(pos);
+                    if (actual.isAir()) {
+                        continue;
+                    }
+                    int sx = min.x() + (pos.getX() - origin.x());
+                    int sy = min.y() + (pos.getY() - origin.y());
+                    int sz = min.z() + (pos.getZ() - origin.z());
+                    if (sx >= min.x() && sx <= max.x() && sy >= min.y() && sy <= max.y() && sz >= min.z() && sz <= max.z()) {
+                        BlockState expected = clipboard.getBlock(BlockVector3.at(sx, sy, sz));
+                        if (!expected.getBlockType().getId().equals("minecraft:air")) {
+                            continue; // part of the build (already checked block by block)
+                        }
+                    }
+                    ++extra;
+                    if (details != null && details.size() < limit) {
+                        details.add("\u00a77 (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ") \u00a7cextra \u00a7f" + spbAccuracy.describeActual(actual));
+                    }
+                }
+            }
+        }
+        return extra;
     }
 
     /**
@@ -111,10 +155,13 @@ public final class FinishScan {
         lines.add("\u00a76Finish debug \u00a77build: \u00a7f" + session.buildName + " \u00a77completed flag: \u00a7f" + session.isCompleted);
         lines.add("\u00a77Preview spot: \u00a7f" + base.x() + " " + base.y() + " " + base.z()
             + " \u00a77best spot: \u00a7f" + best.x() + " " + best.y() + " " + best.z());
-        lines.add(total == 0
-            ? "\u00a7aEvery block matches at the best spot - the build counts as finished."
-            : "\u00a7e" + total + " block(s) differ at the best spot:");
+        List<String> extraDetails = new ArrayList<>();
+        int extras = extraBlocks(world, session, best, extraDetails, 8);
+        lines.add(total == 0 && extras == 0
+            ? "\u00a7aEvery block matches at the best spot and nothing extra is in the area - the build counts as finished."
+            : "\u00a7e" + total + " block(s) differ and " + extras + " extra block(s) in the area at the best spot:");
         lines.addAll(details);
+        lines.addAll(extraDetails);
         return lines;
     }
 

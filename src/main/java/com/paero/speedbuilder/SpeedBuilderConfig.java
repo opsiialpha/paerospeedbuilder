@@ -137,18 +137,41 @@ public class SpeedBuilderConfig {
 
     public static final String DIFFICULTY_DEFAULT = "default";
     public static final String DIFFICULTY_PAERO = "paero";
+    public static final String DIFFICULTY_SUPEREASY = "supereasy";
     public static final int MIN_FINISH_TIME = 1;
     public static final int MAX_FINISH_TIME = 60;
 
-    /** "default" or "paero". Paero never touches the player's inventory when a build starts. */
+    /** "default", "paero" or "supereasy". Paero and SuperEasy never touch the player's inventory. */
     public static String getDifficulty(UUID uuid) {
         String d = SpeedBuilderConfig.getPlayerSettings(uuid).difficulty;
+        if (DIFFICULTY_SUPEREASY.equalsIgnoreCase(d)) {
+            return DIFFICULTY_SUPEREASY;
+        }
         return DIFFICULTY_PAERO.equalsIgnoreCase(d) ? DIFFICULTY_PAERO : DIFFICULTY_DEFAULT;
     }
 
     public static void setDifficulty(UUID uuid, String difficulty) {
-        SpeedBuilderConfig.getPlayerSettings(uuid).difficulty = DIFFICULTY_PAERO.equalsIgnoreCase(difficulty) ? DIFFICULTY_PAERO : DIFFICULTY_DEFAULT;
+        String value = DIFFICULTY_DEFAULT;
+        if (DIFFICULTY_SUPEREASY.equalsIgnoreCase(difficulty)) {
+            value = DIFFICULTY_SUPEREASY;
+        } else if (DIFFICULTY_PAERO.equalsIgnoreCase(difficulty)) {
+            value = DIFFICULTY_PAERO;
+        }
+        SpeedBuilderConfig.getPlayerSettings(uuid).difficulty = value;
         SpeedBuilderConfig.saveConfig();
+    }
+
+    /** Next difficulty in the order Default -> Paero -> SuperEasy -> Default (config screen button). */
+    public static String nextDifficulty(String current) {
+        if (DIFFICULTY_DEFAULT.equals(current)) return DIFFICULTY_PAERO;
+        if (DIFFICULTY_PAERO.equals(current)) return DIFFICULTY_SUPEREASY;
+        return DIFFICULTY_DEFAULT;
+    }
+
+    public static String difficultyName(String difficulty) {
+        if (DIFFICULTY_SUPEREASY.equals(difficulty)) return "SuperEasy";
+        if (DIFFICULTY_PAERO.equals(difficulty)) return "Paero";
+        return "Default";
     }
 
     /** UI theme: "default", "dark" or "paero" (see Theme). */
@@ -165,8 +188,27 @@ public class SpeedBuilderConfig {
         SpeedBuilderConfig.saveConfig();
     }
 
+    /**
+     * True when the player's inventory must never be touched (nothing cleared, given, used up or refunded).
+     * That is the Paero difficulty and also SuperEasy, which is Paero plus the helpers below.
+     */
     public static boolean isPaero(UUID uuid) {
-        return DIFFICULTY_PAERO.equals(getDifficulty(uuid));
+        String d = getDifficulty(uuid);
+        return DIFFICULTY_PAERO.equals(d) || DIFFICULTY_SUPEREASY.equals(d);
+    }
+
+    public static boolean isSuperEasy(UUID uuid) {
+        return DIFFICULTY_SUPEREASY.equals(getDifficulty(uuid));
+    }
+
+    /** Auto Orient: placed blocks are turned to the direction the build needs. Always on in SuperEasy. */
+    public static boolean isAutoOrient(UUID uuid) {
+        return isSuperEasy(uuid) || SpeedBuilderConfig.getPlayerSettings(uuid).autoOrient;
+    }
+
+    public static void setAutoOrient(UUID uuid, boolean enabled) {
+        SpeedBuilderConfig.getPlayerSettings(uuid).autoOrient = enabled;
+        SpeedBuilderConfig.saveConfig();
     }
 
     /** How many seconds the finish title stays on screen after a build is completed. */
@@ -251,6 +293,7 @@ public class SpeedBuilderConfig {
         public int finishTitleTime = 5;
         public String difficulty = "default";
         public String uiTheme = "default";
+        public boolean autoOrient = false;
     }
 
     public static class ConfigData {
