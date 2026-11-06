@@ -9,11 +9,11 @@ Needs JDK 21. The builds are in `builds.zip`; unzip them first:
     unzip -q builds.zip -d src/main/resources/assets/paerospeedbuilder/
     ./gradlew build          (Windows: gradlew.bat build)
 
-The jar ends up in `build/libs/paerobuilder-1.3.1.jar`. Test with `./gradlew runClient`.
+The jar ends up in `build/libs/paerobuilder-1.3.2.jar`. Test with `./gradlew runClient`.
 
 ## Commands
 - `/pb <build>` - preview, countdown, then build (enters build mode, leaves it when you finish)
-- `/pb setup` - builds a 15x15 platform under your feet and puts the 7x16x7 build area on top of it, centred on you (16 blocks of air above, no teleport). If a setup already exists it tells you to use `/pb resetup`
+- `/pb setup` - builds a 15x15 platform under your feet and puts the 15x16x15 build area on top of it, centred on you (16 blocks of air above, no teleport). If a setup already exists it tells you to use `/pb resetup`
 - `/pb resetup` - deletes the existing setup and builds a new one where you are standing
 - `/pb area` - shows the build area and its coordinates
 - `/pb grind <build>`, `/pb view <build>`, `/pb restart`, `/pb reset`, `/pb stop`
@@ -31,8 +31,11 @@ The jar ends up in `build/libs/paerobuilder-1.3.1.jar`. Test with `./gradlew run
 - UI Theme - `/pb config theme default|dark|paero`
   - **Default**: normal colours; every countdown number has its own colour (5 green, 4 aqua, 3 yellow, 2 orange, 1 red)
   - **Dark**: same, but yellow chat text becomes light gray
-  - **Paero**: everything in white-to-gray, the countdown fades from dark gray (5) to white (1) and BUILD! is a white-to-gray gradient
+  - **Paero**: everything in white-to-gray, the countdown fades from light gray (5) to white (1) and BUILD! is a white-to-gray gradient
   - The finish title, finish time and stopwatch colours are yours to choose and are never changed by a theme
+
+## Build area
+The build area is 15 x 16 x 15. Builds are 7 wide, so the preview is pasted in the middle of the area; a build counts as finished when it is complete there or anywhere else inside the area. Custom builds made with `/pb create` use the whole 15 wide area. Worlds set up with an older version are moved out automatically so the area keeps the same centre.
 
 ## Build mode
 `/pb <build>` turns build mode on and it turns off when you finish. Your game mode is never changed.

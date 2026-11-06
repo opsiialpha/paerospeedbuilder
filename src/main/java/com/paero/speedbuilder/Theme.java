@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Player;
  *
  * default - the normal colours (countdown numbers each get their own colour)
  * dark    - same as default, but yellow text becomes light gray
- * paero   - everything is white-to-gray, countdown fades gray -> white (5 darkest, 1 lightest), BUILD! is a white-to-gray gradient
+ * paero   - everything is white-to-gray, countdown fades light gray -> white (5 light gray, 1 white), BUILD! is a white-to-gray gradient
  *
  * The finish title / finish time / stopwatch colours are user-chosen and are never touched by a theme.
  */
@@ -151,7 +151,7 @@ public class Theme {
     // ---------------------------------------------------------------- countdown / titles
 
     private static final String[] COUNTDOWN_CODES = {"", "\u00a7c", "\u00a76", "\u00a7e", "\u00a7b", "\u00a7a"};
-    private static final int[] PAERO_COUNTDOWN = {0, 0xFFFFFF, 0xE6E6E6, 0xCFCFCF, 0xB0B0B0, 0x8C8C8C};
+    private static final int[] PAERO_COUNTDOWN = {0, 0xFFFFFF, 0xECECEC, 0xDADADA, 0xCCCCCC, 0xBFBFBF};
 
     /** Legacy colour code used for the number n (1-5) in the countdown: 5 green, 4 aqua, 3 yellow, 2 orange, 1 red. */
     public static String countdownCode(int n) {

@@ -1,5 +1,6 @@
 package com.paero.speedbuilder;
 
+import com.sk89q.worldedit.extent.clipboard.Clipboard;
 import com.sk89q.worldedit.math.BlockVector3;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,20 +14,20 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /**
  * Where the build area is. Before /pb setup was ever used it is the old fixed area at the world origin
- * (-3, 0, -3) .. (3, 15, 3). /pb setup stores the area above the platform it builds, and the position is
+ * (-7, 0, -7) .. (7, 15, 7). /pb setup stores the area above the platform it builds, and the position is
  * saved in the world folder so it survives restarts.
  *
- * The area is 7 x 16 x 7; "origin" is its minimum (lowest, north-west) corner.
+ * The area is 15 x 16 x 15; "origin" is its minimum (lowest, north-west) corner.
  */
 public final class BuildArea {
-    public static final int SIZE_XZ = 7;
+    public static final int SIZE_XZ = 15;
     public static final int HEIGHT = 16;
     /** Build mode only lets you place blocks in the lowest 12 layers (y 0..11 relative to the area). */
     public static final int PLACE_HEIGHT = 12;
 
-    private static final int LEGACY_X = -3;
+    private static final int LEGACY_X = -7;
     private static final int LEGACY_Y = 0;
-    private static final int LEGACY_Z = -3;
+    private static final int LEGACY_Z = -7;
     private static final String FILE_NAME = "paerospeedbuilder_area.properties";
 
     private static Path loadedFrom;
@@ -69,6 +70,14 @@ public final class BuildArea {
                 z = Integer.parseInt(props.getProperty("z"));
                 dimension = props.getProperty("dimension", "");
                 set = true;
+                // Areas saved by older versions were 7 wide and centred on the spot where /pb setup was used.
+                // The area is 15 wide now, so move its corner out to keep the same centre.
+                int savedSize = Integer.parseInt(props.getProperty("size", "7"));
+                if (savedSize != SIZE_XZ) {
+                    int shift = (SIZE_XZ - savedSize) / 2;
+                    x -= shift;
+                    z -= shift;
+                }
             }
         } catch (Exception e) {
             SpeedBuilderMod.LOGGER.error("Failed to read the saved build area: " + e.getMessage());
@@ -88,6 +97,7 @@ public final class BuildArea {
             }
             Properties props = new Properties();
             props.setProperty("set", "true");
+            props.setProperty("size", String.valueOf(SIZE_XZ));
             props.setProperty("dimension", dimension);
             props.setProperty("x", String.valueOf(x));
             props.setProperty("y", String.valueOf(y));
@@ -151,10 +161,35 @@ public final class BuildArea {
         return new int[]{x, y, z};
     }
 
-    /** Minimum corner of the build area (the point the schematic's minimum corner is pasted to). */
+    /** Minimum corner of the whole build area. Builds are pasted with originFor(...) so they sit in the middle. */
     public static BlockVector3 origin(MinecraftServer server) {
         int[] c = corner(server);
         return BlockVector3.at(c[0], c[1], c[2]);
+    }
+
+    /**
+     * Where a build of the given size is pasted: centred inside the area (a 7 wide build in the 15 wide
+     * area starts 4 blocks in from each side). A build as wide as the area (or wider) starts at the corner.
+     */
+    public static BlockVector3 originFor(MinecraftServer server, BlockVector3 min, BlockVector3 max) {
+        int[] c = corner(server);
+        int width = max.x() - min.x() + 1;
+        int depth = max.z() - min.z() + 1;
+        return BlockVector3.at(c[0] + centreOffset(width), c[1], c[2] + centreOffset(depth));
+    }
+
+    /** /pb view: the paste point that makes the schematic's minimum corner land in the centred spot. */
+    public static BlockVector3 viewPaste(MinecraftServer server, Clipboard clipboard) {
+        BlockVector3 min = clipboard.getMinimumPoint();
+        BlockVector3 max = clipboard.getMaximumPoint();
+        BlockVector3 target = originFor(server, min, max);
+        BlockVector3 o = clipboard.getOrigin();
+        return target.add(o.x() - min.x(), o.y() - min.y(), o.z() - min.z());
+    }
+
+    /** How far a build of the given width is moved in from the area's edge to sit in the middle. */
+    public static int centreOffset(int width) {
+        return Math.max(0, (SIZE_XZ - width) / 2);
     }
 
     public static BlockPos minPos(MinecraftServer server) {

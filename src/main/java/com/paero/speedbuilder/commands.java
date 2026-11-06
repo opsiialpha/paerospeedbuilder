@@ -430,7 +430,7 @@ public class commands {
                             Clipboard clipboard = reader.read();
                             BlockVector3 min = clipboard.getMinimumPoint();
                             BlockVector3 max = clipboard.getMaximumPoint();
-                            BlockVector3 worldOrigin = BuildArea.origin(player.getServer());
+                            BlockVector3 worldOrigin = BuildArea.originFor(player.getServer(), min, max);
                             long now = System.currentTimeMillis();
                             spbAccuracy.ACTIVE_SESSIONS.put(player.getUUID(), new spbAccuracy.BuildSession(clipboard, min, max, worldOrigin, now, buildName, false));
                         }

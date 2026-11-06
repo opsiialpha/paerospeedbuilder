@@ -22,7 +22,7 @@ public class FinishCommand {
                 player.displayClientMessage(Theme.lit(player, "\u00a76Finish screen: ").append(FinishDisplay.buildTitle(player.getUUID())), false);
                 player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish text <text>  \u00a78(use &c, &l etc. for extra formatting)"), false);
                 player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish color <name|#RRGGBB>"), false);
-                player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish test  \u00a78| \u00a77/pb finish reset"), false);
+                player.displayClientMessage(Theme.lit(player, "\u00a77/pb finish test  \u00a78| \u00a77/pb finish reset  \u00a78| \u00a77/pb finish debug"), false);
                 return 1;
             })
             .then(Commands.literal("text").then(Commands.argument("text", StringArgumentType.greedyString()).executes(ctx -> {
@@ -53,6 +53,18 @@ public class FinishCommand {
                 SpeedBuilderConfig.setFinishTitle(player.getUUID(), "Superb!");
                 SpeedBuilderConfig.setFinishColor(player.getUUID(), "green");
                 FinishDisplay.show(player, 12340L);
+                return 1;
+            }))
+            .then(Commands.literal("debug").executes(ctx -> {
+                ServerPlayer player = ctx.getSource().getPlayerOrException();
+                spbAccuracy.BuildSession session = spbAccuracy.ACTIVE_SESSIONS.get(player.getUUID());
+                if (session == null) {
+                    player.displayClientMessage(Theme.lit(player, "\u00a7cNo active build session - start a build first, then run this while building."), false);
+                    return 0;
+                }
+                for (String line : FinishScan.report(player.serverLevel(), session)) {
+                    player.displayClientMessage(Theme.lit(player, line), false);
+                }
                 return 1;
             }))
             .then(Commands.literal("test").executes(ctx -> {

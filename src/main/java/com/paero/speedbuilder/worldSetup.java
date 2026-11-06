@@ -88,7 +88,7 @@ public class worldSetup {
      * Builds a 15x15 platform in the ground under the player's feet:
      * outer ring cyan terracotta, next ring light gray concrete, the inside gray concrete and one
      * upright quartz pillar in the middle. The 16 blocks above the platform are cleared to air and the
-     * 7x16x7 build area is placed there, centred on the player (its bottom layer is the layer you stand in).
+     * 15x16x15 build area is placed on top of it (its bottom layer is the layer you stand in).
      */
     private static int setup(CommandSourceStack source, boolean replace) {
         ServerPlayer player;
@@ -146,7 +146,7 @@ public class worldSetup {
             }
         }
 
-        // The build area sits right above the platform, centred on where the command was typed.
+        // The 15x15 build area sits exactly on top of the platform, centred on where the command was typed.
         BuildArea.set(server, world.dimension().location().toString(), new BlockPos(cx - BuildArea.SIZE_XZ / 2, floorY + 1, cz - BuildArea.SIZE_XZ / 2));
 
         // Anything still running was tied to the old area position.

@@ -91,21 +91,13 @@ public class spbAccuracy {
         return correct == total ? 1 : 0;
     }
 
-    private static boolean withinBlockMatch(String expectedId, BlockState expected, net.minecraft.world.level.block.state.BlockState actual) {
+    static boolean withinBlockMatch(String expectedId, BlockState expected, net.minecraft.world.level.block.state.BlockState actual) {
         String actualId = BuiltInRegistries.BLOCK.getKey(actual.getBlock()).toString();
         if (expectedId.equals("minecraft:dispenser") || expectedId.equals("minecraft:dropper") || expectedId.equals("minecraft:observer") || expectedId.equals("minecraft:hopper") || expectedId.equals("minecraft:pumpkin") || expectedId.equals("minecraft:carved_pumpkin") || expectedId.equals("minecraft:jack_o_lantern") || expectedId.equals("minecraft:chest") || expectedId.equals("minecraft:furnace") || expectedId.equals("minecraft:blast_furnace") || expectedId.equals("minecraft:smoker")) {
             if (!expectedId.equals(actualId)) {
                 return false;
             }
-            String expectedStr = spbAccuracy.filterBlockStateString(spbAccuracy.weBlockStateToString(expected));
-            String actualStr = spbAccuracy.filterBlockStateString(spbAccuracy.mcBlockStateToString(actual));
-            SpeedBuilderMod.LOGGER.debug("[DEBUG] Directional block check for " + expectedId);
-            SpeedBuilderMod.LOGGER.debug("[DEBUG] Expected (filtered): " + expectedStr);
-            SpeedBuilderMod.LOGGER.debug("[DEBUG] Actual (filtered): " + actualStr);
-            if (!expectedStr.contains("[")) {
-                return true;
-            }
-            return expectedStr.equals(actualStr);
+            return StateMatch.matches(spbAccuracy.weProperties(expected), spbAccuracy.mcProperties(actual));
         }
         if (!expectedId.equals(actualId)) {
             return spbAccuracy.isGrassDirtMatch(expectedId, actualId);
@@ -318,9 +310,35 @@ public class spbAccuracy {
     }
 
     private static boolean statesStrictEqual(BlockState expected, net.minecraft.world.level.block.state.BlockState actual) {
-        String expStr = spbAccuracy.weBlockStateToString(expected);
-        String actStr = spbAccuracy.mcBlockStateToString(actual);
-        return expStr.equals(actStr);
+        // Compared by property name/value, not as raw strings: WorldEdit and Minecraft list properties in a
+        // different order and WorldEdit may use another letter case (facing=NORTH vs facing=north).
+        return StateMatch.matches(spbAccuracy.weProperties(expected), spbAccuracy.mcProperties(actual));
+    }
+
+    private static Map<String, String> weProperties(BlockState state) {
+        HashMap<String, String> props = new HashMap<String, String>();
+        for (Map.Entry<com.sk89q.worldedit.registry.state.Property<?>, Object> entry : state.getStates().entrySet()) {
+            props.put(entry.getKey().getName(), String.valueOf(entry.getValue()));
+        }
+        return props;
+    }
+
+    private static Map<String, String> mcProperties(net.minecraft.world.level.block.state.BlockState state) {
+        HashMap<String, String> props = new HashMap<String, String>();
+        for (Map.Entry<net.minecraft.world.level.block.state.properties.Property<?>, Comparable<?>> entry : state.getValues().entrySet()) {
+            props.put(entry.getKey().getName(), String.valueOf(entry.getValue()));
+        }
+        return props;
+    }
+
+    /** Readable text for /pb finish debug. */
+    static String describeExpected(BlockState state) {
+        return spbAccuracy.weBlockStateToString(state);
+    }
+
+    /** Readable text for /pb finish debug. */
+    static String describeActual(net.minecraft.world.level.block.state.BlockState state) {
+        return spbAccuracy.mcBlockStateToString(state);
     }
 
     private static boolean isGrassDirtMatch(String expectedId, String actualId) {
@@ -383,7 +401,7 @@ public class spbAccuracy {
         Clipboard clipboard = session.clipboard;
         BlockVector3 min = session.min;
         BlockVector3 max = session.max;
-        BlockVector3 origin = session.worldOrigin;
+        BlockVector3 origin = FinishScan.resolve(world, session);
         int total = 0;
         int correct = 0;
         for (int y = min.y(); y <= max.y(); ++y) {
