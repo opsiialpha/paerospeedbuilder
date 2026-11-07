@@ -32,7 +32,8 @@ The jar ends up in `build/libs/paerobuilder-1.3.4.jar`. Test with `./gradlew run
     right-click the face of a block and the block the build needs in the spot next to it is placed for you.
     Your hotbar switches to that block; if it is only in your inventory it is brought to your hotbar like a
     middle click. Only the spot next to the block you click is used (never mid-air), and a block you don't
-    have is reported instead of placing something else. Works at the spot where the preview was shown.
+    have is reported instead of placing something else. While a build is running you can only place blocks
+    (from either hand, and water) on spots where the build has a block; every other placement is denied. Works at the spot where the preview was shown.
 - Auto Orient - `/pb config autoorient on|off` (always on in SuperEasy): blocks you place are turned to the
   facing / half / axis the build needs (a stair placed facing north becomes the south-facing one the build has)
 - UI Theme - `/pb config theme default|dark|paero`

@@ -92,6 +92,19 @@ public final class AutoBuild {
         return !spbAccuracy.withinBlockMatch(expectedId, expected, actual);
     }
 
+    // ---------------------------------------------------------------- SuperEasy placement lock
+
+    /** True when this player is on SuperEasy with a running build (placing is then limited to the build's own blocks). */
+    public static boolean isLocked(ServerPlayer player) {
+        return SpeedBuilderConfig.isSuperEasy(player.getUUID()) && activeSession(player) != null;
+    }
+
+    /** True when the running build has a block at this spot, i.e. a SuperEasy player may place something there. */
+    public static boolean isBuildSpot(ServerPlayer player, BlockPos pos) {
+        spbAccuracy.BuildSession session = activeSession(player);
+        return session != null && expectedAt(session, pos) != null;
+    }
+
     // ---------------------------------------------------------------- SuperEasy auto place
 
     /**

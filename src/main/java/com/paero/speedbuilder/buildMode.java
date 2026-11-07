@@ -229,6 +229,11 @@ public class buildMode {
                     deny(event);
                     return;
                 }
+                if (AutoBuild.isLocked(serverPlayer) && !AutoBuild.isBuildSpot(serverPlayer, targetPos)) {
+                    serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cSuperEasy: you can only place where the build needs a block!"), true);
+                    deny(event);
+                    return;
+                }
                 if (targetState.getBlock() == Blocks.WATER || targetState.getFluidState().getType() == Fluids.WATER) {
                     deny(event);
                     return;
@@ -252,11 +257,20 @@ public class buildMode {
 
         // SuperEasy: right-click a block face and the block the build needs there is placed for you
         // (the hotbar switches to it, or it is pulled in from the inventory).
-        if (hand == InteractionHand.MAIN_HAND && SpeedBuilderConfig.isSuperEasy(serverPlayer.getUUID())) {
-            InteractionResult auto = AutoBuild.tryAutoPlace(serverPlayer, serverPlayer.serverLevel(), hitResult);
-            if (auto != null) {
-                event.setCanceled(true);
-                event.setCancellationResult(auto);
+        if (SpeedBuilderConfig.isSuperEasy(serverPlayer.getUUID())) {
+            if (hand == InteractionHand.MAIN_HAND) {
+                InteractionResult auto = AutoBuild.tryAutoPlace(serverPlayer, serverPlayer.serverLevel(), hitResult);
+                if (auto != null) {
+                    event.setCanceled(true);
+                    event.setCancellationResult(auto);
+                    return;
+                }
+            }
+            // Auto place did not place anything. A normal placement would drop the block wherever vanilla puts it
+            // (also from the off hand), so while a build is running SuperEasy never lets a block item through.
+            if (itemInHand.getItem() instanceof BlockItem && AutoBuild.isLocked(serverPlayer)) {
+                serverPlayer.displayClientMessage(Theme.lit(serverPlayer, "\u00a7cSuperEasy: you can only place where the build needs a block!"), true);
+                deny(event);
                 return;
             }
         }
